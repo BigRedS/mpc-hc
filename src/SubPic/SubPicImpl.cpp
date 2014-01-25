@@ -127,30 +127,59 @@ STDMETHODIMP CSubPicImpl::GetSourceAndDest(RECT rcWindow, RECT rcVideo,
 
     if (m_size.cx > 0 && m_size.cy > 0) {
         CPoint offset(0, 0);
-        double scaleX = 1.0, scaleY = 1.0;
+        double scaleX, scaleY;
 
         // Enable best fit only for HD contents since SD contents
         // are often anamorphic and thus break the auto-fit logic
         if (m_relativeTo == BEST_FIT && m_virtualTextureSize.cx > 720) {
-            double scaleFactor = 1.0;
+            double scaleFactor;
             CRect videoRect(rcVideo);
             LONG stretch = lround(videoRect.Width() * (1.0 - videoStretchFactor) / 2.0);
             videoRect.left += stretch;
             videoRect.right -= stretch;
+            CSize szWindow = CRect(rcWindow).Size();
             CSize szVideo = videoRect.Size();
 
             double subtitleAR = double(m_virtualTextureSize.cx) / m_virtualTextureSize.cy;
             double videoAR = double(szVideo.cx) / szVideo.cy;
 
+            // Relative to Video
             double dCRVideoWidth = szVideo.cy * subtitleAR;
             double dCRVideoHeight = szVideo.cx / subtitleAR;
 
-            if ((dCRVideoHeight > dCRVideoWidth) != (videoAR > subtitleAR)) {
-                scaleFactor = dCRVideoHeight / m_virtualTextureSize.cy;
-                offset.y = lround((szVideo.cy - dCRVideoHeight) / 2.0);
+            // Relative to Window
+            double dCRWindowWidth = szWindow.cy * subtitleAR;
+            double dCRWindowHeight = szWindow.cx / subtitleAR;
+
+            if (dCRVideoHeight > dCRVideoWidth) {
+                // Scale to video border in this case since there are none existing content that would need fixing
+                if (videoAR > subtitleAR) {
+                    scaleFactor = dCRVideoWidth / m_virtualTextureSize.cx;
+                    offset.x = lround((szVideo.cx - dCRVideoWidth) / 2.0);
+                } else {
+                    scaleFactor = dCRVideoHeight / m_virtualTextureSize.cy;
+                    offset.y = lround((szVideo.cy - dCRVideoHeight) / 2.0);
+                }
+            } else if (videoAR > subtitleAR) {
+                if (szWindow.cy >= dCRVideoHeight) {
+                    scaleFactor = dCRVideoHeight / m_virtualTextureSize.cy;
+                    offset.y = lround((szVideo.cy - dCRVideoHeight) / 2.0);
+                } else {
+                    double scaleTo = std::max(dCRVideoWidth, dCRWindowWidth);
+                    scaleFactor = scaleTo / m_virtualTextureSize.cx;
+                    offset.x = lround((szVideo.cx - scaleTo) / 2.0);
+                    offset.y = lround((szVideo.cy - (scaleTo / subtitleAR)) / 2.0);
+                }
             } else {
-                scaleFactor = dCRVideoWidth / m_virtualTextureSize.cx;
-                offset.x = lround((szVideo.cx - dCRVideoWidth) / 2.0);
+                if (szWindow.cx >= dCRVideoWidth) {
+                    scaleFactor = dCRVideoWidth / m_virtualTextureSize.cx;
+                    offset.x = lround((szVideo.cx - dCRVideoWidth) / 2.0);
+                } else {
+                    double scaleTo = std::max(dCRVideoHeight, dCRWindowHeight);
+                    scaleFactor = scaleTo / m_virtualTextureSize.cy;
+                    offset.x = lround((szVideo.cx - (scaleTo * subtitleAR)) / 2.0);
+                    offset.y = lround((szVideo.cy - scaleTo) / 2.0);
+                }
             }
 
             scaleX = scaleY = scaleFactor;
