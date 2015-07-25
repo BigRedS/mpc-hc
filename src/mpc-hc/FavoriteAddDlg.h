@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "../CmdUI/CmdUI.h"
+#include "CmdUI.h"
 
 
 // CFavoriteAddDlg dialog

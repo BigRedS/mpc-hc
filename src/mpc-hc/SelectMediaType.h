@@ -22,7 +22,7 @@
 #pragma once
 
 #include <afxwin.h>
-#include "../CmdUI/CmdUI.h"
+#include "CmdUI.h"
 
 
 // CSelectMediaType dialog

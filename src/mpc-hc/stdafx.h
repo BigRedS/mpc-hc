@@ -85,7 +85,7 @@ namespace Gdiplus
 #include <Il21dec.h>
 
 #include "sizecbar/scbarg.h"
-#include "../CmdUI/CmdUI.h"
+#include "CmdUI.h"
 #include "MPCDialog.h"
 
 #include "../Subtitles/RTS.h"

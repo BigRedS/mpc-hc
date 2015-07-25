@@ -23,7 +23,7 @@
 
 #include <afxcmn.h>
 #include <afxwin.h>
-#include "../CmdUI/CmdUI.h"
+#include "CmdUI.h"
 
 
 // CSaveDlg dialog

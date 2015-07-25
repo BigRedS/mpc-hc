@@ -23,7 +23,7 @@
 
 #include "FloatEdit.h"
 #include "resource.h"
-#include "../CmdUI/CmdUI.h"
+#include "CmdUI.h"
 
 // CPnSPresetsDlg dialog
 
