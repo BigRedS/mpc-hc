@@ -31,7 +31,7 @@
 
 //IMPLEMENT_DYNAMIC(COpenDlg, CResizableDialog)
 COpenDlg::COpenDlg(CWnd* pParent /*=nullptr*/)
-    : CResizableDialog(COpenDlg::IDD, pParent)
+    : CMPCDialog(COpenDlg::IDD, pParent)
     , m_bAppendToPlaylist(FALSE)
     , m_bMultipleFiles(false)
 {
@@ -54,7 +54,7 @@ void COpenDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(COpenDlg, CResizableDialog)
+BEGIN_MESSAGE_MAP(COpenDlg, CMPCDialog)
     ON_BN_CLICKED(IDC_BUTTON1, OnBrowseFile)
     ON_BN_CLICKED(IDC_BUTTON2, OnBrowseDubFile)
     ON_BN_CLICKED(IDOK, OnOk)
@@ -105,20 +105,14 @@ BOOL COpenDlg::OnInitDialog()
     m_bMultipleFiles = false;
     m_bAppendToPlaylist = FALSE;
 
-    AddAnchor(m_cbMRU, TOP_LEFT, TOP_RIGHT);
-    AddAnchor(m_cbMRUDub, TOP_LEFT, TOP_RIGHT);
-    AddAnchor(IDC_BUTTON1, TOP_RIGHT);
-    AddAnchor(IDC_BUTTON2, TOP_RIGHT);
-    AddAnchor(IDOK, TOP_RIGHT);
-    AddAnchor(IDCANCEL, TOP_RIGHT);
-    AddAnchor(IDC_STATIC1, TOP_LEFT, TOP_RIGHT);
-
     CRect r;
     GetWindowRect(r);
-    CSize size = r.Size();
-    SetMinTrackSize(size);
-    size.cx = 1000;
-    SetMaxTrackSize(size);
+    SetMaxTrackSize(UNLIMITED, r.Height());
+
+    //CSize size = r.Size();
+    //SetMinTrackSize(size);
+    //size.cx = 1000;
+    //SetMaxTrackSize(size);
 
     return TRUE;  // return TRUE unless you set the focus to a control
     // EXCEPTION: OCX Property Pages should return FALSE

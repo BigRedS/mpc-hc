@@ -24,9 +24,9 @@
 #include "PathUtils.h"
 
 CModelessDialog::CModelessDialog(UINT nIDTemplate)
-    : CResizableDialog(nIDTemplate)
+    : CMPCDialog(nIDTemplate, GetDesktopWindow())
 {
-    Create(nIDTemplate, GetDesktopWindow());
+    Create(m_lpszTemplateName, m_pParentWnd);
 }
 
 BOOL CModelessDialog::DestroyWindow()
@@ -61,15 +61,7 @@ CDebugShadersDlg::CDebugShadersDlg()
     VERIFY(SetIcon(AfxGetMainWnd()->GetIcon(true), true) == nullptr);
 
     // Setup window auto-resize and restore last position
-    SetSizeGripVisibility(FALSE);
-    SetMinTrackSize(CSize(360, 100));
-    AddAnchor(IDC_COMBO1, TOP_LEFT, TOP_RIGHT);
-    AddAnchor((UINT)IDC_STATIC, TOP_LEFT, BOTTOM_RIGHT);
-    AddAnchor(IDC_EDIT1, TOP_LEFT, BOTTOM_RIGHT);
-    AddAnchor(IDC_RADIO1, TOP_RIGHT);
-    AddAnchor(IDC_RADIO2, TOP_RIGHT);
-    AddAnchor(IDC_RADIO3, TOP_RIGHT);
-    AddAnchor(IDC_RADIO4, TOP_RIGHT);
+    //SetMinTrackSize(360, 100);
     EnableSaveRestore(IDS_R_DEBUG_SHADERS);
 
     CWinApp* pApp = AfxGetApp();

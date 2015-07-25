@@ -1,5 +1,5 @@
 /*
- * (C) 2013-2014 see Authors.txt
+ * (C) 2013-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -20,14 +20,13 @@
 
 #pragma once
 
-#include "ResizableLib/ResizableDialog.h"
-
 #include "EventDispatcher.h"
 #include "PixelShaderCompiler.h"
 #include "Shaders.h"
 #include "TimerWrappers.h"
+#include "MPCDialog.h"
 
-class CModelessDialog : public CResizableDialog
+class CModelessDialog : public CMPCDialog
 {
 public:
     CModelessDialog(UINT nIDTemplate);

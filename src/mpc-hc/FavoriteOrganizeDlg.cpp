@@ -30,7 +30,7 @@
 
 //IMPLEMENT_DYNAMIC(CFavoriteOrganizeDlg, CResizableDialog)
 CFavoriteOrganizeDlg::CFavoriteOrganizeDlg(CWnd* pParent /*=nullptr*/)
-    : CResizableDialog(CFavoriteOrganizeDlg::IDD, pParent)
+    : CMPCDialog(CFavoriteOrganizeDlg::IDD, pParent)
 {
 }
 
@@ -101,7 +101,7 @@ void CFavoriteOrganizeDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CFavoriteOrganizeDlg, CResizableDialog)
+BEGIN_MESSAGE_MAP(CFavoriteOrganizeDlg, CMPCDialog)
     ON_NOTIFY(TCN_SELCHANGE, IDC_TAB1, OnTcnSelchangeTab1)
     ON_WM_DRAWITEM()
     ON_BN_CLICKED(IDC_BUTTON1, OnRenameBnClicked)
@@ -144,14 +144,6 @@ BOOL CFavoriteOrganizeDlg::OnInitDialog()
     s.GetFav(FAV_DEVICE, m_sl[2]);
 
     SetupList(false);
-
-    AddAnchor(IDC_TAB1, TOP_LEFT, BOTTOM_RIGHT);
-    AddAnchor(IDC_LIST2, TOP_LEFT, BOTTOM_RIGHT);
-    AddAnchor(IDC_BUTTON1, TOP_RIGHT);
-    AddAnchor(IDC_BUTTON2, TOP_RIGHT);
-    AddAnchor(IDC_BUTTON3, TOP_RIGHT);
-    AddAnchor(IDC_BUTTON4, TOP_RIGHT);
-    AddAnchor(IDOK, BOTTOM_RIGHT);
 
     EnableSaveRestore(IDS_R_DLG_ORGANIZE_FAV);
 

@@ -1,5 +1,5 @@
 /*
- * (C) 2014 see Authors.txt
+ * (C) 2014-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -23,7 +23,7 @@
 #include "CmdLineHelpDlg.h"
 
 CmdLineHelpDlg::CmdLineHelpDlg(const CString& cmdLine /*= _T("")*/)
-    : CResizableDialog(CmdLineHelpDlg::IDD)
+    : CMPCDialog(CmdLineHelpDlg::IDD)
     , m_cmdLine(cmdLine)
 {
 }
@@ -40,7 +40,7 @@ void CmdLineHelpDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 
-BEGIN_MESSAGE_MAP(CmdLineHelpDlg, CResizableDialog)
+BEGIN_MESSAGE_MAP(CmdLineHelpDlg, CMPCDialog)
 END_MESSAGE_MAP()
 
 BOOL CmdLineHelpDlg::OnInitDialog()
@@ -59,10 +59,6 @@ BOOL CmdLineHelpDlg::OnInitDialog()
     UpdateData(FALSE);
 
     GetDlgItem(IDOK)->SetFocus(); // Force the focus on the OK button
-
-    AddAnchor(IDC_STATIC1, TOP_LEFT);
-    AddAnchor(IDC_EDIT1, TOP_LEFT, BOTTOM_RIGHT);
-    AddAnchor(IDOK, BOTTOM_RIGHT);
 
     EnableSaveRestore(IDS_R_DLG_CMD_LINE_HELP);
 

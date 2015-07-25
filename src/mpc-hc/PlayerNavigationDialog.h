@@ -22,7 +22,7 @@
 
 #include <atlcoll.h>
 #include "resource.h"
-#include "ResizableLib/ResizableDialog.h"
+#include "MPCDialog.h"
 
 class CMainFrame;
 
@@ -35,7 +35,7 @@ protected:
     virtual ULONG GetGestureStatus(CPoint) override { return 0; }
 };
 
-class CPlayerNavigationDialog : public CResizableDialog
+class CPlayerNavigationDialog : public CMPCDialog
 {
 private:
     CNavListBox m_channelList;

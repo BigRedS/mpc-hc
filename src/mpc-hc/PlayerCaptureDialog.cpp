@@ -511,9 +511,8 @@ static int ShowPPage(CAtlArray<Codec>& codecs, const CComboBox& box, HWND hWnd =
 
 // CPlayerCaptureDialog dialog
 
-//IMPLEMENT_DYNAMIC(CPlayerCaptureDialog, CResizableDialog)
 CPlayerCaptureDialog::CPlayerCaptureDialog(CMainFrame* pMainFrame)
-    : CResizableDialog(CPlayerCaptureDialog::IDD, nullptr)
+    : CMPCDialog(CPlayerCaptureDialog::IDD, nullptr)
     , m_pMainFrame(pMainFrame)
     , m_bInitialized(false)
     , m_vidfps(0)
@@ -1299,7 +1298,7 @@ int CPlayerCaptureDialog::GetAudioInput() const
     return (int)m_audinput.GetItemData(i);
 }
 
-BEGIN_MESSAGE_MAP(CPlayerCaptureDialog, CResizableDialog)
+BEGIN_MESSAGE_MAP(CPlayerCaptureDialog, CMPCDialog)
     ON_WM_DESTROY()
     ON_CBN_SELCHANGE(IDC_COMBO4, OnVideoInput)
     ON_CBN_SELCHANGE(IDC_COMBO1, OnVideoType)

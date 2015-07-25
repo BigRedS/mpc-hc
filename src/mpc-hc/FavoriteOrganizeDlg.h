@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -23,12 +23,12 @@
 
 #include <afxcmn.h>
 #include <afxwin.h>
-#include "ResizableLib/ResizableDialog.h"
+#include "MPCDialog.h"
 
 
 // CFavoriteOrganizeDlg dialog
 
-class CFavoriteOrganizeDlg : public CResizableDialog
+class CFavoriteOrganizeDlg : public CMPCDialog
 {
     //  DECLARE_DYNAMIC(CFavoriteOrganizeDlg)
 

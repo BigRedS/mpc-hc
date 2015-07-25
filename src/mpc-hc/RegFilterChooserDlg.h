@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2013 see Authors.txt
+ * (C) 2006-2013, 2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -22,12 +22,12 @@
 #pragma once
 
 #include <afxwin.h>
-#include "ResizableLib/ResizableDialog.h"
+#include "MPCDialog.h"
 
 
 // CRegFilterChooserDlg dialog
 
-class CRegFilterChooserDlg : public CResizableDialog
+class CRegFilterChooserDlg : public CMPCDialog
 {
     //  DECLARE_DYNAMIC(CRegFilterChooserDlg)
 

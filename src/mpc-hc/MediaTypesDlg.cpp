@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -30,7 +30,7 @@
 
 //IMPLEMENT_DYNAMIC(CMediaTypesDlg, CResizableDialog)
 CMediaTypesDlg::CMediaTypesDlg(IGraphBuilderDeadEnd* pGBDE, CWnd* pParent /*=nullptr*/)
-    : CResizableDialog(CMediaTypesDlg::IDD, pParent)
+    : CMPCDialog(CMediaTypesDlg::IDD, pParent)
     , m_pGBDE(pGBDE)
     , m_type(UNKNOWN)
     , m_subtype(GUID_NULL)
@@ -43,7 +43,7 @@ CMediaTypesDlg::~CMediaTypesDlg()
 
 void CMediaTypesDlg::DoDataExchange(CDataExchange* pDX)
 {
-    CResizableDialog::DoDataExchange(pDX);
+    __super::DoDataExchange(pDX);
     DDX_Control(pDX, IDC_COMBO1, m_pins);
     DDX_Control(pDX, IDC_EDIT1, m_report);
 }
@@ -75,7 +75,7 @@ void CMediaTypesDlg::AddMediaType(const AM_MEDIA_TYPE* pmt)
     }
 }
 
-BEGIN_MESSAGE_MAP(CMediaTypesDlg, CResizableDialog)
+BEGIN_MESSAGE_MAP(CMediaTypesDlg, CMPCDialog)
     ON_CBN_SELCHANGE(IDC_COMBO1, OnCbnSelchangeCombo1)
 END_MESSAGE_MAP()
 
@@ -99,13 +99,7 @@ BOOL CMediaTypesDlg::OnInitDialog()
     m_pins.SetCurSel(0);
     OnCbnSelchangeCombo1();
 
-    AddAnchor(IDC_STATIC1, TOP_LEFT, TOP_RIGHT);
-    AddAnchor(IDC_STATIC2, TOP_LEFT, TOP_RIGHT);
-    AddAnchor(IDC_COMBO1, TOP_LEFT, TOP_RIGHT);
-    AddAnchor(IDC_EDIT1, TOP_LEFT, BOTTOM_RIGHT);
-    AddAnchor(IDOK, BOTTOM_RIGHT);
-
-    SetMinTrackSize(CSize(300, 200));
+    //SetMinTrackSize(CSize(300, 200));
 
     return TRUE;  // return TRUE unless you set the focus to a control
     // EXCEPTION: OCX Property Pages should return FALSE

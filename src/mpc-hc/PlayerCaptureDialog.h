@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -27,7 +27,7 @@
 #include "../filters/transform/BufferFilter/BufferFilter.h"
 #include "FloatEdit.h"
 #include "resource.h"
-#include "ResizableLib/ResizableDialog.h"
+#include "MPCDialog.h"
 
 
 //
@@ -348,7 +348,7 @@ typedef CAtlArray<Codec> CCodecArray;
 
 // CPlayerCaptureDialog dialog
 
-class CPlayerCaptureDialog : public CResizableDialog
+class CPlayerCaptureDialog : public CMPCDialog
 {
     //DECLARE_DYNAMIC(CPlayerCaptureDialog)
 

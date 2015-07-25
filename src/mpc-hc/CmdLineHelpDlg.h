@@ -1,5 +1,5 @@
 /*
- * (C) 2014 see Authors.txt
+ * (C) 2014-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -21,10 +21,10 @@
 #pragma once
 
 #include <afxwin.h>
-#include "ResizableLib/ResizableDialog.h"
 #include "resource.h"
+#include "MPCDialog.h"
 
-class CmdLineHelpDlg : public CResizableDialog
+class CmdLineHelpDlg : public CMPCDialog
 {
 private:
     CStatic m_icon;

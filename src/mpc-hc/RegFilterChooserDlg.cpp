@@ -28,10 +28,9 @@
 
 
 // CRegFilterChooserDlg dialog
-
 //IMPLEMENT_DYNAMIC(CRegFilterChooserDlg, CResizableDialog)
 CRegFilterChooserDlg::CRegFilterChooserDlg(CWnd* pParent /*=nullptr*/)
-    : CResizableDialog(CRegFilterChooserDlg::IDD, pParent)
+    : CMPCDialog(CRegFilterChooserDlg::IDD, pParent)
 {
 }
 
@@ -64,7 +63,7 @@ void CRegFilterChooserDlg::AddToList(IMoniker* pMoniker)
 }
 
 
-BEGIN_MESSAGE_MAP(CRegFilterChooserDlg, CResizableDialog)
+BEGIN_MESSAGE_MAP(CRegFilterChooserDlg, CMPCDialog)
     ON_LBN_DBLCLK(IDC_LIST1, OnLbnDblclkList1)
     ON_UPDATE_COMMAND_UI(IDOK, OnUpdateOK)
     ON_BN_CLICKED(IDOK, OnBnClickedOk)
@@ -94,12 +93,7 @@ BOOL CRegFilterChooserDlg::OnInitDialog()
     }
     EndEnumSysDev;
 
-    AddAnchor(IDC_LIST2, TOP_LEFT, BOTTOM_RIGHT);
-    AddAnchor(IDC_BUTTON1, BOTTOM_LEFT);
-    AddAnchor(IDOK, BOTTOM_RIGHT);
-    AddAnchor(IDCANCEL, BOTTOM_RIGHT);
-
-    SetMinTrackSize(CSize(300, 100));
+    //SetMinTrackSize(CSize(300, 100));
 
     return TRUE;  // return TRUE unless you set the focus to a control
     // EXCEPTION: OCX Property Pages should return FALSE

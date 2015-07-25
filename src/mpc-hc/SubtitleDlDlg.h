@@ -23,11 +23,11 @@
 
 #include "ISDb.h"
 #include "resource.h"
-#include "ResizableLib/ResizableDialog.h"
+#include "MPCDialog.h"
 
 class CInternetSession;
 
-class CSubtitleDlDlg : public CResizableDialog
+class CSubtitleDlDlg : public CMPCDialog
 {
 private:
     struct isdb_movie_parsed {

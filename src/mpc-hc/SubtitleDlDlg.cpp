@@ -30,7 +30,7 @@
 #define UWM_FAILED (WM_USER + 101)
 
 CSubtitleDlDlg::CSubtitleDlDlg(CWnd* pParent, const CStringA& url, const CString& filename)
-    : CResizableDialog(CSubtitleDlDlg::IDD, pParent)
+    : CMPCDialog(CSubtitleDlDlg::IDD, pParent)
     , m_ps(&m_list, 0, TRUE)
     , m_defps(&m_list, filename)
     , m_pTA(nullptr)
@@ -336,13 +336,8 @@ BOOL CSubtitleDlDlg::OnInitDialog()
     m_list.InsertColumn(COL_DISC, ResStr(IDS_SUBDL_DLG_DISC_COL), LVCFMT_CENTER, columnWidth[3]);
     m_list.InsertColumn(COL_TITLES, ResStr(IDS_SUBDL_DLG_TITLES_COL), LVCFMT_LEFT, columnWidth[4]);
 
-    AddAnchor(IDC_LIST1, TOP_LEFT, BOTTOM_RIGHT);
-    AddAnchor(IDC_CHECK1, BOTTOM_LEFT);
-    AddAnchor(IDOK, BOTTOM_RIGHT);
-    AddAnchor(IDC_STATUSBAR, BOTTOM_LEFT, BOTTOM_RIGHT);
-
-    const CSize s(420, 200);
-    SetMinTrackSize(s);
+    //const CSize s(420, 200);
+    //SetMinTrackSize(s);
     EnableSaveRestore(IDS_R_DLG_SUBTITLEDL);
 
     // set language sorting order
@@ -488,14 +483,10 @@ void CSubtitleDlDlg::OnColumnClick(NMHDR* pNMHDR, LRESULT* pResult)
 void CSubtitleDlDlg::OnSize(UINT nType, int cx, int cy)
 {
     __super::OnSize(nType, cx, cy);
-
-    ArrangeLayout();
 }
 
 void CSubtitleDlDlg::OnDestroy()
 {
-    RemoveAllAnchors();
-
     const CHeaderCtrl& pHC = *m_list.GetHeaderCtrl();
     CString strColumnWidth;
 
@@ -510,7 +501,7 @@ void CSubtitleDlDlg::OnDestroy()
 
 BOOL CSubtitleDlDlg::OnEraseBkgnd(CDC* pDC)
 {
-    EraseBackground(pDC);
+    __super::OnEraseBkgnd(pDC);
 
     return TRUE;
 }
@@ -527,7 +518,7 @@ void CSubtitleDlDlg::DownloadSelectedSubtitles()
     OnOK();
 }
 
-BEGIN_MESSAGE_MAP(CSubtitleDlDlg, CResizableDialog)
+BEGIN_MESSAGE_MAP(CSubtitleDlDlg, CMPCDialog)
     ON_WM_ERASEBKGND()
     ON_WM_SIZE()
     ON_MESSAGE_VOID(UWM_PARSE, OnParse)

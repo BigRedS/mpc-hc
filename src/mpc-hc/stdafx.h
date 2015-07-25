@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2014 see Authors.txt
+ * (C) 2006-2015 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -85,7 +85,8 @@ namespace Gdiplus
 #include <Il21dec.h>
 
 #include "sizecbar/scbarg.h"
-#include "ResizableLib/ResizableDialog.h"
+#include "../CmdUI/CmdUI.h"
+#include "MPCDialog.h"
 
 #include "../Subtitles/RTS.h"
 #include "../Subtitles/STS.h"

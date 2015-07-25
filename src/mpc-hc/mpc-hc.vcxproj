@@ -186,6 +186,7 @@
     <ClCompile Include="MediaTypesDlg.cpp" />
     <ClCompile Include="Monitors.cpp" />
     <ClCompile Include="MouseTouch.cpp" />
+    <ClCompile Include="MPCDialog.cpp" />
     <ClCompile Include="MPCPngImage.cpp" />
     <ClCompile Include="Mpeg2SectionData.cpp" />
     <ClCompile Include="mplayerc.cpp" />
@@ -321,6 +322,7 @@
     <ClInclude Include="Monitors.h" />
     <ClInclude Include="MouseTouch.h" />
     <ClInclude Include="MpcApi.h" />
+    <ClInclude Include="MPCDialog.h" />
     <ClInclude Include="MPCPngImage.h" />
     <ClInclude Include="Mpeg2SectionData.h" />
     <ClInclude Include="mplayerc.h" />
