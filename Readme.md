@@ -75,7 +75,6 @@ MPC-HC makes use of the following third-party code:
 | QuickTime SDK     | -                         | https://developer.apple.com/quicktime/ |
 | RARFileSource     | GPLv2+                    | http://www.v12pwr.com/RARFileSource/ |
 | RealMedia SDK     | -                         | - |
-| ResizableLib      | Artistic License          | https://sourceforge.net/projects/resizablelib/ |
 | sanear            | LGPLv2.1                  | https://github.com/alexmarsev/sanear |
 | Silk Icons        | CC Attribution 2.5        | http://www.famfamfam.com/lab/icons/silk/ |
 | SoundTouch        | LGPLv2.1                  | http://www.surina.net/soundtouch/ |
