@@ -21,18 +21,30 @@ Part B: Preparing the GCC environment
   * If you installed the MSYS/MinGW package in an other directory you will have to use that path in the following steps.
   * If you don't have Git installed then the revision number will be a hard-coded one, like 1.6.3.0.
 
- 1. Download and extract MSYS_MinGW-w64_GCC_492_x86-x64.7z to "C:\MSYS" -> http://xhmikosr.1f0.de/tools/msys/MSYS_MinGW-w64_GCC_492_x86-x64.7z
-    For the components and their version see: http://xhmikosr.1f0.de/tools/msys/MSYS_MinGW-w64_GCC_492_x86-x64_components.txt
- 2. Edit the "fstab" file in "C:\MSYS\etc" to specify your MinGW path. This is optional.
-    Add this to it: C:\MSYS\mingw	\mingw
-    Note the tab-space between "mingw" and "\mingw"
- 3. Create a file named "build.user.bat" in "C:\mpc-hc" containing the following entries, adapted for your system:
+ 1. Download MSYS2
+    32-bit: http://repo.msys2.org/distrib/i686/
+    64-bit: http://repo.msys2.org/distrib/x86_64/ (Recommended)
+ 2. Install or extract it to "C:\MSYS"
+ 3. Run msys2_shell.bat (if you did not use an installer you must restart MSYS2 after first run)
+ 4. Install needed software by running those commands:
+    update-core
+    pacman -Su
+    pacman -S make pkg-config diffutils git
+    Note that this is bare minimum, you can install more packages that can be of use to you
+ 5. Download YASM and save as "yasm.exe" in "C:\MSYS\usr\bin"
+    32-bit: http://www.tortall.net/projects/yasm/releases/yasm-1.3.0-win32.exe
+    64-bit: http://www.tortall.net/projects/yasm/releases/yasm-1.3.0-win64.exe (Recommended)
+ 6. Download and extract mingw to "C:\MSYS\mingw" http://files.1f0.de/mingw/
+    (you might use MSYS2 package, but we recomend this one)
+ 7. Create a file named "build.user.bat" in "C:\mpc-hc" containing the following entries, adapted for your system:
 
 @ECHO OFF
+SET "MSYSTEM=MINGW32"
 SET "MPCHC_MSYS=C:\MSYS"
 SET "MPCHC_MINGW32=%MPCHC_MSYS%\mingw"
 SET "MPCHC_MINGW64=%MPCHC_MINGW32%"
 REM Git is optional to set if you chose to add it in PATH when installing it
+REM It will be automatically detected if installed through pacman
 SET "MPCHC_GIT=C:\Program Files\Git"
 REM Optional, if you plan to modify the translations, install Python 2.7 or set the variable to its path
 SET "MPCHC_PYTHON=C:\Python27"
