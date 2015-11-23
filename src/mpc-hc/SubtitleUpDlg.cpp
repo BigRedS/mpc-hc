@@ -33,13 +33,9 @@ enum {
     UWM_CLEAR
 };
 
-CSubtitleUpDlg::CSubtitleUpDlg(CWnd* pParentWnd)
-    : CResizableDialog(CSubtitleUpDlg::IDD, pParentWnd)
-    , m_MainFrame(*(CMainFrame*)(pParentWnd))
-{
-}
-
-CSubtitleUpDlg::~CSubtitleUpDlg()
+CSubtitleUpDlg::CSubtitleUpDlg(CMainFrame* pParentWnd)
+    : CResizableDialog(IDD, pParentWnd)
+    , m_pMainFrame(pParentWnd)
 {
 }
 
@@ -55,7 +51,7 @@ void CSubtitleUpDlg::SetStatusText(const CString& status, BOOL bPropagate/* = TR
 {
     m_status.SetText(status, 0, 0);
     if (bPropagate) {
-        m_MainFrame.SendStatusMessage(status, 5000);
+        m_pMainFrame->SendStatusMessage(status, 5000);
     }
 }
 
@@ -84,7 +80,7 @@ BOOL CSubtitleUpDlg::OnInitDialog()
                             | LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT
                             | LVS_EX_CHECKBOXES   | LVS_EX_LABELTIP);
 
-    m_list.SetImageList(&m_MainFrame.m_pSubtitlesProviders->GetImageList(), LVSIL_SMALL);
+    m_list.SetImageList(&m_pMainFrame->m_pSubtitlesProviders->GetImageList(), LVSIL_SMALL);
 
     if (columnWidth.GetCount() != COL_TOTAL_COLUMNS) {
         // default sizes
@@ -102,17 +98,13 @@ BOOL CSubtitleUpDlg::OnInitDialog()
     m_list.DeleteAllItems();
 
     int i = 0;
-    for (const auto& iter : m_MainFrame.m_pSubtitlesProviders->Providers()) {
+    for (const auto& iter : m_pMainFrame->m_pSubtitlesProviders->Providers()) {
         if (iter->Flags(SPF_UPLOAD)) {
             int iItem = m_list.InsertItem((int)i++, CString(iter->Name().c_str()), iter->GetIconIndex());
             m_list.SetItemText(iItem, COL_USERNAME, UTF8To16(iter->UserName().c_str()));
             m_list.SetItemText(iItem, COL_STATUS, ResStr(IDS_SUBUL_DLG_STATUS_READY));
             m_list.SetCheck(iItem, iter->Enabled(SPF_UPLOAD));
-            m_list.SetItemData(iItem, (DWORD_PTR)(iter));
-            //} else {
-            //    LVITEMINDEX lvii = { iItem, -1 };
-            //    m_list.SetItemIndexState(&lvii, INDEXTOSTATEIMAGEMASK(0), LVIS_STATEIMAGEMASK);
-            //    m_list.SetItemText(iItem, COL_STATUS, ResStr(IDS_SUBUL_DLG_STATUS_NOTIMPLEMENTED));
+            m_list.SetItemData(iItem, (DWORD_PTR)(iter.get()));
         }
     }
 
@@ -148,17 +140,17 @@ BOOL CSubtitleUpDlg::PreTranslateMessage(MSG* pMsg)
 
 void CSubtitleUpDlg::OnOK()
 {
-    m_MainFrame.m_pSubtitlesProviders->Upload();
+    m_pMainFrame->m_pSubtitlesProviders->Upload();
 }
 
 void CSubtitleUpDlg::OnAbort()
 {
-    m_MainFrame.m_pSubtitlesProviders->Abort(SubtitlesThreadType(STT_UPLOAD));
+    m_pMainFrame->m_pSubtitlesProviders->Abort(SubtitlesThreadType(STT_UPLOAD));
 }
 
 void CSubtitleUpDlg::OnOptions()
 {
-    m_MainFrame.ShowOptions(CPPageSubMisc::IDD);
+    m_pMainFrame->ShowOptions(CPPageSubMisc::IDD);
 }
 
 void CSubtitleUpDlg::OnUpdateOk(CCmdUI* pCmdUI)
@@ -193,7 +185,8 @@ void CSubtitleUpDlg::OnSize(UINT nType, int cx, int cy)
         m_status.SetParts(2, parts);
         m_status.GetRect(1, &statusRect);
         statusRect.DeflateRect(1, 1, 1, 1);
-        m_progress.SetWindowPos(&wndTop, statusRect.left, statusRect.top, statusRect.Width(), statusRect.Height(),  SWP_NOACTIVATE | SWP_NOZORDER);
+        m_progress.SetWindowPos(&wndTop, statusRect.left, statusRect.top, statusRect.Width(), statusRect.Height(),
+                                SWP_NOACTIVATE | SWP_NOZORDER);
     }
 }
 
@@ -291,11 +284,14 @@ void CSubtitleUpDlg::OnRightClick(NMHDR* pNMHDR, LRESULT* pResult)
 
         CMenu m;
         m.CreatePopupMenu();
-        m.AppendMenu(MF_STRING | (provider.Flags(SPF_LOGIN) ? MF_ENABLED : MF_DISABLED), SET_CREDENTIALS, ResStr(IDS_SUBMENU_SETUP));
-        m.AppendMenu(MF_STRING | (provider.Flags(SPF_LOGIN) && !provider.UserName().empty() ? MF_ENABLED : MF_DISABLED), RESET_CREDENTIALS, ResStr(IDS_SUBMENU_RESET));
+        m.AppendMenu(MF_STRING | (provider.Flags(SPF_LOGIN) ? MF_ENABLED : MF_DISABLED), SET_CREDENTIALS,
+                     ResStr(IDS_SUBMENU_SETUP));
+        m.AppendMenu(MF_STRING | (provider.Flags(SPF_LOGIN) && !provider.UserName().empty() ? MF_ENABLED : MF_DISABLED),
+                     RESET_CREDENTIALS, ResStr(IDS_SUBMENU_RESET));
         m.AppendMenu(MF_SEPARATOR);
         m.AppendMenu(MF_STRING | (lpnmlv->iItem > 0 ? MF_ENABLED : MF_DISABLED), MOVE_UP, ResStr(IDS_SUBMENU_MOVEUP));
-        m.AppendMenu(MF_STRING | (lpnmlv->iItem < m_list.GetItemCount() - 1  ? MF_ENABLED : MF_DISABLED), MOVE_DOWN, ResStr(IDS_SUBMENU_MOVEDOWN));
+        m.AppendMenu(MF_STRING | (lpnmlv->iItem < m_list.GetItemCount() - 1  ? MF_ENABLED : MF_DISABLED), MOVE_DOWN,
+                     ResStr(IDS_SUBMENU_MOVEDOWN));
         m.AppendMenu(MF_SEPARATOR);
         m.AppendMenu(MF_STRING | MF_ENABLED, OPEN_URL, ResStr(IDS_SUBMENU_OPENURL));
 
@@ -311,12 +307,13 @@ void CSubtitleUpDlg::OnRightClick(NMHDR* pNMHDR, LRESULT* pResult)
                 CString szPass(UTF8To16(provider.Password().c_str()));
                 CString szDomain(provider.Name().c_str());
                 if (ERROR_SUCCESS == PromptForCredentials(GetSafeHwnd(),
-                                                          ResStr(IDS_SUB_CREDENTIALS_TITLE), ResStr(IDS_SUB_CREDENTIALS_MSG) + CString(provider.Url().c_str()),
+                                                          ResStr(IDS_SUB_CREDENTIALS_TITLE),
+                                                          ResStr(IDS_SUB_CREDENTIALS_MSG) + CString(provider.Url().c_str()),
                                                           szDomain, szUser, szPass, /*&bSave*/nullptr)) {
                     provider.UserName((const char*)UTF16To8(szUser));
                     provider.Password((const char*)UTF16To8(szPass));
                     m_list.SetItemText(lpnmlv->iItem, 1, szUser);
-                    s.strSubtitlesProviders = CString(m_MainFrame.m_pSubtitlesProviders->WriteSettings().c_str());
+                    s.strSubtitlesProviders = CString(m_pMainFrame->m_pSubtitlesProviders->WriteSettings().c_str());
                     s.SaveSettings();
                 }
                 break;
@@ -325,20 +322,20 @@ void CSubtitleUpDlg::OnRightClick(NMHDR* pNMHDR, LRESULT* pResult)
                 provider.UserName("");
                 provider.Password("");
                 m_list.SetItemText(lpnmlv->iItem, 1, _T(""));
-                s.strSubtitlesProviders = CString(m_MainFrame.m_pSubtitlesProviders->WriteSettings().c_str());
+                s.strSubtitlesProviders = CString(m_pMainFrame->m_pSubtitlesProviders->WriteSettings().c_str());
                 s.SaveSettings();
                 break;
             case MOVE_UP: {
-                m_MainFrame.m_pSubtitlesProviders->MoveUp(lpnmlv->iItem);
+                m_pMainFrame->m_pSubtitlesProviders->MoveUp(lpnmlv->iItem);
                 ListView_SortItemsEx(m_list.GetSafeHwnd(), SortCompare, m_list.GetSafeHwnd());
-                s.strSubtitlesProviders = CString(m_MainFrame.m_pSubtitlesProviders->WriteSettings().c_str());
+                s.strSubtitlesProviders = CString(m_pMainFrame->m_pSubtitlesProviders->WriteSettings().c_str());
                 s.SaveSettings();
                 break;
             }
             case MOVE_DOWN: {
-                m_MainFrame.m_pSubtitlesProviders->MoveDown(lpnmlv->iItem);
+                m_pMainFrame->m_pSubtitlesProviders->MoveDown(lpnmlv->iItem);
                 ListView_SortItemsEx(m_list.GetSafeHwnd(), SortCompare, m_list.GetSafeHwnd());
-                s.strSubtitlesProviders = CString(m_MainFrame.m_pSubtitlesProviders->WriteSettings().c_str());
+                s.strSubtitlesProviders = CString(m_pMainFrame->m_pSubtitlesProviders->WriteSettings().c_str());
                 s.SaveSettings();
                 break;
             }
@@ -373,7 +370,7 @@ void CSubtitleUpDlg::OnItemChanged(NMHDR* pNMHDR, LRESULT* pResult)
         SubtitlesProvider& _provider = *(SubtitlesProvider*)pNMLV->lParam;
         _provider.Enabled(SPF_UPLOAD, pNMLV->uNewState == 0x2000 ? TRUE : FALSE);
         auto& s = AfxGetAppSettings();
-        s.strSubtitlesProviders = CString(m_MainFrame.m_pSubtitlesProviders->WriteSettings().c_str());
+        s.strSubtitlesProviders = CString(m_pMainFrame->m_pSubtitlesProviders->WriteSettings().c_str());
         s.SaveSettings();
     }
 
@@ -487,13 +484,13 @@ void CSubtitleUpDlg::DoUpload(INT _nCount)
 {
     SendMessage(UWM_UPLOAD, (WPARAM)_nCount, (LPARAM)nullptr);
 }
-void CSubtitleUpDlg::DoUploading(SubtitlesProvider& _provider)
+void CSubtitleUpDlg::DoUploading(std::shared_ptr<SubtitlesProvider> _provider)
 {
-    SendMessage(UWM_UPLOADING, (WPARAM)nullptr, (LPARAM)&_provider);
+    SendMessage(UWM_UPLOADING, (WPARAM)nullptr, (LPARAM)_provider.get());
 }
-void CSubtitleUpDlg::DoCompleted(SRESULT _result, SubtitlesProvider& _provider)
+void CSubtitleUpDlg::DoCompleted(SRESULT _result, std::shared_ptr<SubtitlesProvider> _provider)
 {
-    SendMessage(UWM_COMPLETED, (WPARAM)_result, (LPARAM)&_provider);
+    SendMessage(UWM_COMPLETED, (WPARAM)_result, (LPARAM)_provider.get());
 }
 void CSubtitleUpDlg::DoFinished(BOOL _bAborted)
 {

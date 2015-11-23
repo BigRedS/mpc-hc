@@ -23,7 +23,6 @@
 
 #include "resource.h"
 #include "ResizableLib/ResizableDialog.h"
-#include <vector>
 #include <list>
 
 class CMainFrame;
@@ -34,7 +33,6 @@ enum SRESULT;
 
 class CSubtitleDlDlg : public CResizableDialog
 {
-private:
     enum {
         COL_PROVIDER,
         COL_FILENAME,
@@ -53,7 +51,7 @@ private:
     struct PARAMSORT {
         PARAMSORT(HWND hWnd, int nSortColumn, int fSortOrder)
             : m_hWnd(hWnd), m_nSortColumn(nSortColumn), m_fSortOrder(fSortOrder) {}
-        CListCtrl* const m_list;
+        HWND m_hWnd;
         int m_nSortColumn;
         int m_fSortOrder;
     };
@@ -65,7 +63,7 @@ private:
     CListCtrl m_list;
     CProgressCtrl m_progress;
     CStatusBarCtrl m_status;
-    CMainFrame& m_MainFrame;
+    CMainFrame* m_pMainFrame;
     SubtitlesList m_Subtitles;
 
     static int CALLBACK SortCompare(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
@@ -74,8 +72,8 @@ private:
     void DownloadSelectedSubtitles();
 
 public:
-    CSubtitleDlDlg(CWnd* pParentWnd);
-    virtual ~CSubtitleDlDlg();
+    CSubtitleDlDlg(CMainFrame* pParentWnd);
+    virtual ~CSubtitleDlDlg() = default;
     enum { IDD = IDD_SUBTITLEDL_DLG };
 
 
@@ -89,7 +87,6 @@ protected:
     DECLARE_MESSAGE_MAP()
 
     afx_msg void OnSize(UINT nType, int cx, int cy);
-    afx_msg void OnFailedConnection();
     afx_msg void OnUpdateOk(CCmdUI* pCmdUI);
     afx_msg void OnUpdateRefresh(CCmdUI* pCmdUI);
     afx_msg void OnAbort();

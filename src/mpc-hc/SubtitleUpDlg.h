@@ -33,7 +33,6 @@ enum SRESULT;
 
 class CSubtitleUpDlg : public CResizableDialog
 {
-private:
     enum {
         COL_PROVIDER,
         COL_USERNAME,
@@ -44,14 +43,14 @@ private:
     CListCtrl m_list;
     CProgressCtrl m_progress;
     CStatusBarCtrl m_status;
-    CMainFrame& m_MainFrame;
+    CMainFrame* m_pMainFrame;
 
     void DownloadSelectedSubtitles();
     void SetStatusText(const CString& status, BOOL bPropagate = TRUE);
 
 public:
-    CSubtitleUpDlg(CWnd* pParentWnd);
-    virtual ~CSubtitleUpDlg();
+    CSubtitleUpDlg(CMainFrame* pParentWnd);
+    virtual ~CSubtitleUpDlg() = default;
     enum { IDD = IDD_SUBTITLEUP_DLG };
 
 protected:
@@ -68,7 +67,6 @@ protected:
     afx_msg void OnUpdateOk(CCmdUI* pCmdUI);
     afx_msg void OnUpdateRefresh(CCmdUI* pCmdUI);
     afx_msg void OnAbort();
-    afx_msg void OnRefresh();
     afx_msg void OnOptions();
     afx_msg void OnDestroy();
     afx_msg BOOL OnEraseBkgnd(CDC* pDC);
@@ -87,8 +85,8 @@ protected:
 
 public:
     void DoUpload(INT _nCount);
-    void DoUploading(SubtitlesProvider& _provider);
-    void DoCompleted(SRESULT _result, SubtitlesProvider& _provider);
+    void DoUploading(std::shared_ptr<SubtitlesProvider> _provider);
+    void DoCompleted(SRESULT _result, std::shared_ptr<SubtitlesProvider> _provider);
     void DoFinished(BOOL _bAborted);
     void DoFailed();
     void DoClear();

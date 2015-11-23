@@ -21,7 +21,6 @@
 #pragma once
 
 #include "SubtitlesProvidersUtils.h"
-#include "MediaInfo/thirdparty/base64/base64.h"
 #include "MainFrm.h"
 #include "VersionInfo.h"
 
@@ -69,19 +68,30 @@ enum SubtitlesThreadType {
 
 
 struct SubtitlesInfo {
-    SubtitlesInfo() : fileSize(-1), uid(-1)
-        , year(-1), seasonNumber(-1), episodeNumber(-1), discNumber(-1)
-        , hearingImpaired(-1), discCount(-1), downloadCount(-1), corrected(0), score(0)
-        , frameRate(-1), framesNumber(-1), length(-1), fileProvider(nullptr) {}
+    SubtitlesInfo()
+        : fileProvider(nullptr)
+        , uid(UINT_ERROR)
+        , score(0ul)
+        , fileSize(ULONGLONG_ERROR)
+        , year(INT_ERROR)
+        , seasonNumber(INT_ERROR)
+        , episodeNumber(INT_ERROR)
+        , discNumber(INT_ERROR)
+        , hearingImpaired(HI_UNKNOWN)
+        , discCount(INT_ERROR)
+        , downloadCount(INT_ERROR)
+        , corrected(0)
+        , frameRate(-1.0)
+        , framesNumber(INT_ERROR)
+        , length(ULONGLONG_ERROR) {}
     bool operator<(const SubtitlesInfo& rhs) const { return score > rhs.score; }
     HRESULT GetFileInfo(const std::string& sFileName = std::string());
-    //HRESULT GetCurrentSubtitles();
     void Download(BOOL bActivate);
     void OpenUrl() const;
-    SubtitlesProvider& Provider() const { return *fileProvider; }
-    void Provider(SubtitlesProvider* pProvider) { fileProvider = pProvider; }
+    std::shared_ptr<SubtitlesProvider> Provider() const { return fileProvider; }
+    void Provider(std::shared_ptr<SubtitlesProvider> pProvider) { fileProvider = pProvider; }
     DWORD Score() const { return score; }
-    void Set(SubtitlesProvider* pProvider, BYTE nLanguage, BYTE nHearingImpaired, SHORT nScore) {
+    void Set(std::shared_ptr<SubtitlesProvider> pProvider, BYTE nLanguage, BYTE nHearingImpaired, SHORT nScore) {
         static UINT i(0);
         // run twice to check whether i has reached MAXUINT32 which is invalid
         if (uid == -1) { uid = ++i; if (uid == -1) { uid = ++i; } }
@@ -98,21 +108,18 @@ struct SubtitlesInfo {
 
     std::string NormalizeString(std::string sTitle) const {
         // remove ' and ' from string and replace '!?&:\' with ' ' to get more accurate results
-        sTitle = std::regex_replace(sTitle, std::regex(" and ", regex_flags), " ");
-        sTitle = std::regex_replace(sTitle, std::regex(" *[!?&:] *", regex_flags), " ");
-        sTitle = std::regex_replace(sTitle, std::regex("'", regex_flags), "");
+        sTitle = std::regex_replace(sTitle, std::regex(" and ", SubtitlesProvidersUtils::RegexFlags), " ");
+        sTitle = std::regex_replace(sTitle, std::regex(" *[!?&:] *", SubtitlesProvidersUtils::RegexFlags), " ");
+        sTitle = std::regex_replace(sTitle, std::regex("'", SubtitlesProvidersUtils::RegexFlags), "");
 
         return sTitle;
     }
 
-    std::string NormalizeTitle() const {
-        return NormalizeString(title);
-    }
-
-    UINT UID() { return uid; }
+    std::string NormalizeTitle() const { return NormalizeString(title); }
+    UINT UID() const { return uid; }
 
 private:
-    SubtitlesProvider* fileProvider;
+    std::shared_ptr<SubtitlesProvider> fileProvider;
     UINT uid;
     DWORD score;
 public:
@@ -169,9 +176,14 @@ public:
     bool IsThreadRunning() { return m_pThread != nullptr; }
     volatile BOOL& IsThreadAborting() { return m_bAbort; }
 
-    CWinThread* CreateThread() { if (!IsThreadRunning()) { m_pThread = AfxBeginThread(_ThreadProc, this); } return m_pThread; }
+    CWinThread* CreateThread() {
+        if (!IsThreadRunning()) {
+            m_pThread = AfxBeginThread(_ThreadProc, this);
+        }
+        return m_pThread;
+    }
     void AbortThread() { if (IsThreadRunning()) { m_bAbort = TRUE; } }
-    void WaitThread() { if (IsThreadRunning()) { DWORD dwWait = ::WaitForSingleObjectEx(*m_pThread, INFINITE, TRUE); } }
+    void WaitThread() { if (IsThreadRunning()) { ::WaitForSingleObjectEx(*m_pThread, INFINITE, TRUE); } }
 
 private:
     static UINT _ThreadProc(LPVOID pThreadParams) {
@@ -191,7 +203,7 @@ class SubtitlesThread : public CWinThreadProc
     friend class SubtitlesProvider;
     friend class SubtitlesTask;
 public:
-    SubtitlesThread(SubtitlesTask* pTask, SubtitlesInfo pFileInfo, SubtitlesProvider* pProvider)
+    SubtitlesThread(SubtitlesTask* pTask, SubtitlesInfo pFileInfo, std::shared_ptr<SubtitlesProvider> pProvider)
         : m_pTask(pTask), m_pFileInfo(pFileInfo) { m_pFileInfo.Provider(pProvider); }
 
 private:
@@ -269,7 +281,7 @@ private:
 class SubtitlesProvider
 {
 protected:
-    SubtitlesProvider();
+    SubtitlesProvider(SubtitlesProviders* pOwner);
 
 public: // implemented
     virtual std::string Name() PURE;
@@ -284,10 +296,15 @@ protected: // overridden
     virtual void Initialize() {}
     virtual void Uninitialize() {}
 public: // overridden
-    virtual SRESULT Login(std::string& sUserName, std::string& sPassword) { return SR_UNDEFINED; }
+    virtual SRESULT Login(const std::string& sUserName, const std::string& sPassword) { return SR_UNDEFINED; }
     virtual SRESULT Hash(SubtitlesInfo& pFileInfo) { return SR_UNDEFINED; }
     virtual SRESULT Upload(const SubtitlesInfo& pSubtitlesInfo) { return SR_UNDEFINED; };
-    virtual std::string UserAgent() { return string_format("MPC-HC v%u.%u.%u", VersionInfo::GetMajorNumber(), VersionInfo::GetMinorNumber(), VersionInfo::GetPatchNumber()); }
+    virtual std::string UserAgent() {
+        return SubtitlesProvidersUtils::StringFormat("MPC-HC v%u.%u.%u",
+                                                     VersionInfo::GetMajorNumber(),
+                                                     VersionInfo::GetMinorNumber(),
+                                                     VersionInfo::GetPatchNumber());
+    }
 
 public:
     BOOL Login();
@@ -302,13 +319,27 @@ public:
 
 public:
     BOOL Enabled(SubtitlesProviderFlags nFlag) { return nFlag == SPF_UPLOAD ? m_bUpload : m_bSearch; }
-    void Enabled(SubtitlesProviderFlags nFlag, BOOL bEnabled) { if (nFlag == SPF_UPLOAD) { m_bUpload = bEnabled; } else { m_bSearch = bEnabled; } }
+    void Enabled(SubtitlesProviderFlags nFlag, BOOL bEnabled) {
+        if (nFlag == SPF_UPLOAD) {
+            m_bUpload = bEnabled;
+        } else {
+            m_bSearch = bEnabled;
+        }
+    }
     std::string UserName() { return m_sUserName; };
     void UserName(std::string sUserName) { m_sUserName = sUserName; };
-    std::string Password(BOOL bDecrypt = TRUE) { return bDecrypt ? string_decrypt(m_sPassword, string_generate_unique_key()) : m_sPassword; };
-    void Password(std::string sPassword, BOOL bEncrypt = TRUE) { m_sPassword = bEncrypt ? string_encrypt(sPassword, string_generate_unique_key()) : sPassword; };
-    SubtitlesProviders& Providers() { return m_Providers; }
-    int GetIconIndex() { return m_nIconIndex; }
+    std::string Password(BOOL bDecrypt = TRUE) {
+        return bDecrypt
+               ? SubtitlesProvidersUtils::StringDecrypt(m_sPassword, SubtitlesProvidersUtils::StringGenerateUniqueKey())
+               : m_sPassword;
+    };
+    void Password(std::string sPassword, BOOL bEncrypt = TRUE) {
+        m_sPassword = bEncrypt
+                      ? SubtitlesProvidersUtils::StringEncrypt(sPassword, SubtitlesProvidersUtils::StringGenerateUniqueKey())
+                      : sPassword;
+    };
+    SubtitlesProviders& Providers() const { return *m_pOwner; }
+    int GetIconIndex() const { return m_nIconIndex; }
     void SetIconIndex(int nIconIndex) { m_nIconIndex = nIconIndex; }
 
 private:
@@ -316,35 +347,35 @@ private:
     BOOL m_bUpload;
     std::string m_sUserName;
     std::string m_sPassword;
-    SubtitlesProviders& m_Providers;
+    SubtitlesProviders* m_pOwner;
     SubtitlesProviderLogin m_nLoggedIn;
     int m_nIconIndex;
 };
 
 class SubtitlesProviders
 {
-private:
-    SubtitlesProviders();                                     // Private constructor
-    ~SubtitlesProviders();                                    // Private destructor
-    SubtitlesProviders(SubtitlesProviders const&);            // Prevent copy-construction
-    SubtitlesProviders& operator=(SubtitlesProviders const&); // Prevent assignment
+    SubtitlesProviders();
+    ~SubtitlesProviders();
 public:
+    SubtitlesProviders(SubtitlesProviders const&) = delete;
+    SubtitlesProviders& operator=(SubtitlesProviders const&) = delete;
+
     // Instantiated on first use and guaranteed to be destroyed.
     static SubtitlesProviders& Instance() { static SubtitlesProviders that; return that; }
 
 private:
     void RegisterProviders();
     template <class T>
-    void Register() {
-        m_Providers.push_back((SubtitlesProvider*)&T::Instance());
-        auto& provider = m_Providers.back();
+    void Register(SubtitlesProviders* pOwner) {
+        m_pProviders.push_back(T::Create(pOwner));
+        auto& provider = m_pProviders.back();
         HICON hIcon = ::LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(provider->Icon()));
         provider->SetIconIndex(m_himl.Add(hIcon));
         DestroyIcon(hIcon);
     }
 
 public:
-    std::vector<SubtitlesProvider*>& Providers() { return m_Providers; };
+    const std::vector<std::shared_ptr<SubtitlesProvider>>& Providers() const { return m_pProviders; };
     BOOL SubtitlesProviders::CheckInternetConnection();
     void ReadSettings();
     std::string WriteSettings();
@@ -366,11 +397,11 @@ public:
     }
 
     void MoveUp(size_t nIndex) {
-        std::iter_swap(m_Providers.begin() + nIndex, m_Providers.begin() + nIndex - 1);
+        std::iter_swap(m_pProviders.begin() + nIndex, m_pProviders.begin() + nIndex - 1);
     }
 
     void MoveDown(size_t nIndex) {
-        std::iter_swap(m_Providers.begin() + nIndex, m_Providers.begin() + nIndex + 1);
+        std::iter_swap(m_pProviders.begin() + nIndex, m_pProviders.begin() + nIndex + 1);
     }
 
     CImageList& GetImageList() { return m_himl; }
@@ -378,7 +409,7 @@ public:
 private:
     CMainFrame& m_MainFrame;
 
-    std::vector<SubtitlesProvider*> m_Providers;
+    std::vector<std::shared_ptr<SubtitlesProvider>> m_pProviders;
 
     CCritSec m_csTasks;
     std::list<SubtitlesTask*> m_pTasks;

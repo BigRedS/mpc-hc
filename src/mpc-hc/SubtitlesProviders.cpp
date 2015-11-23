@@ -20,6 +20,7 @@
 
 #include "stdafx.h"
 #include "SubtitlesProviders.h"
+#include "MediaInfo/library/Source/ThirdParty/base64/base64.h"
 #include <wininet.h>
 
 #if USE_STATIC_MEDIAINFO
@@ -30,6 +31,8 @@ using namespace MediaInfoLib;
 #include "MediaInfoDLL.h"
 using namespace MediaInfoDLL;
 #endif
+
+using namespace SubtitlesProvidersUtils;
 
 /******************************************************************************
 ** SubtitlesInfo
@@ -173,30 +176,30 @@ std::regex regex_pattern[] = {
         RE_NCG(_RE_CG(_RE_RESOLUTION) "|" _RE_CG(_RE_FORMAT) "|" _RE_CG(_RE_AUDIOCODEC) "|" _RE_CG(_RE_VIDEOCODEC) "|" _RE_NCG(_RE_IGNORE))"+"
         _RE_CAPTURE_RELEASEGROUP
         //_RE_CAPTURE_LANGUAGE
-        , regex_flags),
+        , RegexFlags),
     //--------------------------------------
     std::regex(
         _RE_CAPTURE_TITLE
         RE_NCG(_RE_CG(_RE_YEAR) _RE_OCG(_RE_SEASONEPISODE) "|" _RE_CG(_RE_SEASONEPISODE))
-        , regex_flags),
+        , RegexFlags),
     //--------------------------------------
     std::regex(
         _RE_CAPTURE_SEASONEPISODE
-        , regex_flags),
+        , RegexFlags),
     //--------------------------------------
     std::regex(
         _RE_CAPTURE_DISC
-        , regex_flags),
+        , RegexFlags),
     //--------------------------------------
     std::regex(
         _RE_CAPTURE_HEARINGIMPAIRED
-        , regex_flags),
+        , RegexFlags),
     //--------------------------------------
     std::regex(
         "([^\\\\]+?)(?: (AU|CA|FR|JP|UK|US))?(?: [(](\\d{4})[)])? - (\\d{1,2})x(\\d{1,2}) - ([^.]+?)[.](.+?)[.]" _RE_CG(_RE_ADDICT7ED_LANGUAGE) RE_OCG(_RE_ADDICT7ED_HEARINGIMPAIRED) RE_OCG(_RE_ADDICT7ED_CORRECTED) _RE_ADDICT7ED_VERSION _RE_ADDICT7ED_SIGNATURE
-        , regex_flags),
+        , RegexFlags),
     //--------------------------------------
-    std::regex(_RE_DEAD "+", regex_flags),
+    std::regex(_RE_DEAD "+", RegexFlags),
 
     //--------------------------------------
     //--------------------------------------
@@ -216,7 +219,7 @@ std::regex regex_pattern[] = {
             "|"_RE_PLA(_RE_VIDEOCODEC, 9)
         )"+"
         _RE_CAPTURE_RELEASEGROUP
-        , regex_flags),
+        , RegexFlags),
     //--------------------------------------
 };
 
@@ -267,10 +270,10 @@ HRESULT SubtitlesInfo::GetFileInfo(const std::string& sFileName /*= std::string(
                 if (file.Open(p, CFile::modeRead | CFile::osSequentialScan | CFile::shareDenyNone | CFile::typeBinary, &fileException)) {
                     std::string buffer;
                     buffer.resize((std::string::size_type)file.GetLength());
-                    UINT len = file.Read(&buffer[0], (UINT)buffer.size());
+                    file.Read(&buffer[0], (UINT)buffer.size());
 
                     std::smatch match_pieces;
-                    if (std::regex_search(buffer, match_pieces, std::regex("imdb[.][a-z]{2,3}/title/tt(\\d+)", regex_flags))) {
+                    if (std::regex_search(buffer, match_pieces, std::regex("imdb[.][a-z]{2,3}/title/tt(\\d+)", RegexFlags))) {
                         imdbid = match_pieces[1].str();
                     }
                 }
@@ -286,9 +289,9 @@ HRESULT SubtitlesInfo::GetFileInfo(const std::string& sFileName /*= std::string(
     p.RemoveExtension();
     fileName = UTF16To8(p);
 
-    regex_result result;
+    regexResult result;
 
-    if (std::regex_search(fileName, std::regex("addic[7t]ed", regex_flags)) && string_regex(regex_pattern[5], filePath, result)) {
+    if (std::regex_search(fileName, std::regex("addic[7t]ed", RegexFlags)) && stringMatch(regex_pattern[5], filePath, result)) {
         if (title.empty()) { title = result[0]; }
         if (country.empty()) { country = result[1]; }
         if (year == -1) { year = result[2].empty() ? -1 : atoi(result[2].c_str()); }
@@ -298,7 +301,7 @@ HRESULT SubtitlesInfo::GetFileInfo(const std::string& sFileName /*= std::string(
         if (releaseGroup.empty()) { releaseGroup = result[6]; }
         if (languageName.empty()) { languageName = result[7]; }
         if (hearingImpaired == -1) { hearingImpaired = result[8].empty() ? FALSE : TRUE; }
-    } else if (string_regex(regex_pattern[0], filePath, result)) {
+    } else if (stringMatch(regex_pattern[0], filePath, result)) {
         if (title.empty()) { title = result[0]; }
         if (country.empty()) { country = result[1]; }
         if (year == -1) { year = result[2].empty() ? -1 : atoi(result[2].c_str()); }
@@ -314,7 +317,7 @@ HRESULT SubtitlesInfo::GetFileInfo(const std::string& sFileName /*= std::string(
         if (videoCodec.empty()) { videoCodec = result[9]; }
         if (releaseGroup.empty()) { releaseGroup = result[10]; }
         //if (languageCode.empty()) languageCode = result[11];
-    } else if (string_regex(regex_pattern[1], filePath, result)) {
+    } else if (stringMatch(regex_pattern[1], filePath, result)) {
         if (title.empty()) { title = result[0]; }
         if (country.empty()) { country = result[1]; }
         if (year == -1) { year = result[2].empty() ? -1 : atoi(result[2].c_str()); }
@@ -325,7 +328,7 @@ HRESULT SubtitlesInfo::GetFileInfo(const std::string& sFileName /*= std::string(
     if (!title2.empty()) { title2 = std::regex_replace(title2, regex_pattern[6], " "); }
 
     if ((seasonNumber == -1) && (episodeNumber == -1) && !episode.empty()) {
-        if (string_regex(regex_pattern[2], episode, result)) {
+        if (stringMatch(regex_pattern[2], episode, result)) {
             std::string _seasonNumber(result[0] + result[3] + result[5] + result[7]);
             seasonNumber = atoi(_seasonNumber.c_str());
             if (!seasonNumber) {
@@ -336,11 +339,11 @@ HRESULT SubtitlesInfo::GetFileInfo(const std::string& sFileName /*= std::string(
         }
     }
 
-    if ((discNumber == -1) && string_regex(regex_pattern[3], filePath, result)) {
+    if ((discNumber == -1) && stringMatch(regex_pattern[3], filePath, result)) {
         discNumber = result[0].empty() ? -1 : atoi(result[0].c_str());
     }
 
-    if ((hearingImpaired == -1) && string_regex(regex_pattern[4], filePath, result)) {
+    if ((hearingImpaired == -1) && stringMatch(regex_pattern[4], filePath, result)) {
         hearingImpaired = TRUE;
     }
     return S_OK;
@@ -350,8 +353,8 @@ HRESULT SubtitlesInfo::GetFileInfo(const std::string& sFileName /*= std::string(
 ** SubtitlesProvider
 ******************************************************************************/
 
-SubtitlesProvider::SubtitlesProvider()
-    : m_Providers(SubtitlesProviders::Instance()), m_bSearch(FALSE), m_bUpload(FALSE), m_nLoggedIn(SPL_UNDEFINED)
+SubtitlesProvider::SubtitlesProvider(SubtitlesProviders* pOwner)
+    : m_bSearch(FALSE), m_bUpload(FALSE), m_pOwner(pOwner), m_nLoggedIn(SPL_UNDEFINED), m_nIconIndex(0)
 {
 }
 
@@ -392,13 +395,13 @@ BOOL SubtitlesProvider::IsAborting()
 
 SRESULT SubtitlesProvider::Download(std::string url, std::string referer, std::string& data)
 {
-    string_map headers({
+    stringMap headers({
         { "User-Agent", UserAgent() },
         { "Referer", referer },
     });
 
     DWORD dwStatusCode;
-    string_download(url, headers, data, TRUE, &dwStatusCode);
+    StringDownload(url, headers, data, TRUE, &dwStatusCode);
 
     switch (dwStatusCode) {
         case 200:
@@ -411,13 +414,13 @@ SRESULT SubtitlesProvider::Download(std::string url, std::string referer, std::s
 size_t SubtitlesProvider::Index() const
 {
     size_t index = 0;
-    for (const auto& iter : m_Providers.Providers()) {
-        if (iter == this) {
+    for (const auto& iter : m_pOwner->Providers()) {
+        if (iter.get() == this) {
             return index;
         }
         ++index;
     }
-    return -1;
+    return SIZE_T_ERROR;
 }
 
 BOOL SubtitlesProvider::CheckInternetConnection()
@@ -496,24 +499,24 @@ void SubtitlesProviders::Abort(SubtitlesThreadType nType)
 void SubtitlesProviders::ReadSettings()
 {
     const auto& s = AfxGetAppSettings();
-    regex_results results;
-    string_regex("<[|]([^|]*?)[|]([^|]*?)[|]([^|]*?)[|]([^|]*?)[|]([^|]*?)[|]>", (const char*)UTF16To8(s.strSubtitlesProviders), results);
-    size_t notFount = 0;
+    regexResults results;
+    stringMatch("<[|]([^|]*?)[|]([^|]*?)[|]([^|]*?)[|]([^|]*?)[|]([^|]*?)[|]>", (const char*)UTF16To8(s.strSubtitlesProviders), results);
+    size_t notFound = 0;
     for (const auto& iter : results) {
-        size_t index = &iter - &results[0] - notFount;
+        size_t index = &iter - &results[0] - notFound;
         bool bFound = false;
-        for (auto& iter1 : m_Providers) {
+        for (auto& iter1 : m_pProviders) {
             if (iter[0] == iter1->Name()) {
                 bFound = true;
                 iter1->UserName(iter[1]);
                 iter1->Password(Base64::decode(iter[2]), FALSE);
                 iter1->Enabled(SPF_SEARCH, atoi(iter[3].c_str()));
                 iter1->Enabled(SPF_UPLOAD, atoi(iter[4].c_str()));
-                std::iter_swap(&iter1, m_Providers.begin() + std::min(index, m_Providers.size() - 1));
+                std::iter_swap(&iter1, m_pProviders.begin() + std::min(index, m_pProviders.size() - 1));
             }
         }
         if (bFound == false) {
-            ++notFount;
+            ++notFound;
         }
     }
 }
@@ -521,7 +524,7 @@ void SubtitlesProviders::ReadSettings()
 std::string SubtitlesProviders::WriteSettings()
 {
     std::string result;
-    for (const auto& iter : m_Providers) {
+    for (const auto& iter : m_pProviders) {
         result += "<|" + iter->Name() + "|" + iter->UserName() + "|" + Base64::encode(iter->Password(FALSE)) + "|" + std::to_string(iter->Enabled(SPF_SEARCH)) + "|" + std::to_string(iter->Enabled(SPF_UPLOAD)) + "|>";
     }
     return result;
@@ -539,7 +542,7 @@ SubtitlesTask::SubtitlesTask(CMainFrame* pMainFrame, BOOL bAutoDownload, std::st
     m_bAutoDownload = bAutoDownload;
     m_sLanguages = sLanguages;
     if (bAutoDownload) {
-        string_array _languages(string_tokenize(sLanguages, ","));
+        stringArray _languages(StringTokenize(sLanguages, ","));
         for (const auto& iter : _languages) {
             m_AutoDownload[iter] = FALSE;
         }
@@ -576,7 +579,7 @@ void SubtitlesTask::ThreadProc()
 
         const auto& s = AfxGetAppSettings();
         std::string exclude = UTF16To8(s.strAutoDownloadSubtitlesExclude);
-        string_array exclude_array = string_tokenize(exclude, "|;, ");
+        stringArray exclude_array = StringTokenize(exclude, "|;, ");
         for (auto& iter : exclude_array) {
             if (pFileInfo.filePath.find(iter) != std::string::npos) {
                 return;
@@ -592,7 +595,7 @@ void SubtitlesTask::ThreadProc()
         }
 
     } else if (m_nType & STT_DOWNLOAD) {
-        InsertThread(DEBUG_NEW SubtitlesThread(this, m_pFileInfo, &m_pFileInfo.Provider()));
+        InsertThread(DEBUG_NEW SubtitlesThread(this, m_pFileInfo, m_pFileInfo.Provider()));
     } else if (m_nType & STT_UPLOAD) {
         for (const auto& iter : m_pMainFrame->m_pSubtitlesProviders->Providers()) {
             if (iter->Enabled(SPF_UPLOAD) && iter->Flags(SPF_UPLOAD)) {
@@ -647,7 +650,7 @@ void SubtitlesTask::ThreadProc()
 void SubtitlesThread::ThreadProc()
 {
     try {
-        if (m_pFileInfo.Provider().Login() <= SR_SUCCEEDED) {
+        if (m_pFileInfo.Provider()->Login() <= SR_SUCCEEDED) {
             if (m_pTask->m_nType & STT_SEARCH) {
                 Search();
             } else if (m_pTask->m_nType & STT_DOWNLOAD) {
@@ -677,10 +680,10 @@ void SubtitlesThread::ThreadProc()
 void SubtitlesThread::Search()
 {
     CheckAbortAndThrow();
-    m_pFileInfo.Provider().Hash(m_pFileInfo);
+    m_pFileInfo.Provider()->Hash(m_pFileInfo);
     CheckAbortAndThrow();
     m_pTask->m_pMainFrame->m_wndSubtitlesDownloadDialog.DoSearching(m_pFileInfo);
-    SRESULT searchResult = m_pFileInfo.Provider().Search(m_pFileInfo);
+    SRESULT searchResult = m_pFileInfo.Provider()->Search(m_pFileInfo);
     CheckAbortAndThrow();
     m_pSubtitlesList.sort();
     CheckAbortAndThrow();
@@ -722,13 +725,19 @@ void SubtitlesThread::Download(SubtitlesInfo& pSubtitlesInfo, BOOL bActivate)
 {
     CheckAbortAndThrow();
     m_pTask->m_pMainFrame->m_wndSubtitlesDownloadDialog.DoDownloading(pSubtitlesInfo);
-    if (pSubtitlesInfo.Provider().Download(pSubtitlesInfo) == SR_SUCCEEDED) {
+    if (pSubtitlesInfo.Provider()->Download(pSubtitlesInfo) == SR_SUCCEEDED) {
         CheckAbortAndThrow();
-        string_map data = string_uncompress(pSubtitlesInfo.fileContents, pSubtitlesInfo.fileName);
+        stringMap fileData = StringUncompress(pSubtitlesInfo.fileContents, pSubtitlesInfo.fileName);
         CheckAbortAndThrow();
-        for (const auto& iter : data) {
+        for (const auto& iter : fileData) {
             CheckAbortAndThrow();
-            struct { SubtitlesInfo* pSubtitlesInfo; BOOL bActivate; std::string fileName; std::string fileContents; } data({ &pSubtitlesInfo, bActivate, iter.first, iter.second });
+            struct {
+                SubtitlesInfo* pSubtitlesInfo;
+                BOOL bActivate;
+                std::string fileName;
+                std::string fileContents;
+            } data({ &pSubtitlesInfo, bActivate, iter.first, iter.second });
+
             if (m_pTask->m_pMainFrame->SendMessage(WM_LOADSUBTITLES, (BOOL)bActivate, (LPARAM)&data) == TRUE) {
                 if (!m_pTask->m_AutoDownload.empty()) {
                     m_pTask->m_AutoDownload[pSubtitlesInfo.languageCode] = TRUE;
@@ -742,9 +751,9 @@ void SubtitlesThread::Upload()
 {
     CheckAbortAndThrow();
     m_pTask->m_pMainFrame->m_wndSubtitlesUploadDialog.DoUploading(m_pFileInfo.Provider());
-    m_pFileInfo.Provider().Hash(m_pFileInfo);
+    m_pFileInfo.Provider()->Hash(m_pFileInfo);
     CheckAbortAndThrow();
-    SRESULT uploadResult = m_pFileInfo.Provider().Upload(m_pFileInfo);
+    SRESULT uploadResult = m_pFileInfo.Provider()->Upload(m_pFileInfo);
     m_pTask->m_pMainFrame->m_wndSubtitlesUploadDialog.DoCompleted(uploadResult, m_pFileInfo.Provider());
 }
 
@@ -785,7 +794,7 @@ void SubtitlesThread::Set(SubtitlesInfo& pSubtitlesInfo)
 
     if (IsThreadAborting()) { return; }
 
-    pSubtitlesInfo.Set(&m_pFileInfo.Provider(),
+    pSubtitlesInfo.Set(m_pFileInfo.Provider(),
                        (BYTE)((Languages().length() - Languages().find(pSubtitlesInfo.languageCode) + 1) / 3),
                        (BYTE)(pSubtitlesInfo.hearingImpaired == (int)s.bPreferHearingImpairedSubtitles),
                        score);

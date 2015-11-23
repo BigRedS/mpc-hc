@@ -756,7 +756,7 @@ public:
     afx_msg void OnDvdSubOnOff();
 
     afx_msg LRESULT OnLoadSubtitles(WPARAM wParam, LPARAM lParam);
-    afx_msg LRESULT OnGetSubtitles(WPARAM wParam, LPARAM lParam);
+    afx_msg LRESULT OnGetSubtitles(WPARAM, LPARAM lParam);
 
     // menu item handlers
 

@@ -20,73 +20,61 @@
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include <unordered_map>
 #include <regex>
-
-int LevenshteinDistance(std::string s, std::string t);
-
-std::string string_hex(const std::string& data);
-
-std::string string_hex(const int& data);
-
-std::string string_hash(const std::string& data, ALG_ID Algid = CALG_MD5);
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #define CRYPT_KEYLENGTH  0x00800000
-
-std::string string_encrypt(const std::string& data, const std::string& key, ALG_ID Algid = CALG_AES_128);
-
-std::string string_decrypt(const std::string& data, const std::string& key, ALG_ID Algid = CALG_AES_128);
-
-std::string string_format(char const* fmt, ...);
-
-const std::regex::flag_type regex_flags(std::regex_constants::ECMAScript | std::regex_constants::icase | std::regex_constants::optimize);
-
-typedef std::vector<std::string> regex_result;
-
-typedef std::vector<std::vector<std::string>> regex_results;
-
-size_t string_regex(const std::string& pattern, const std::string& text, regex_results& results);
-
-size_t string_regex(const std::string& pattern, const std::string& text, regex_result& result);
-
-size_t string_regex(const std::regex& pattern, const std::string& text, regex_results& results);
-
-size_t string_regex(const std::regex& pattern, const std::string& text, regex_result& result);
-
 #define Z_ENCODING_GZIP 16
-
-std::string string_gzdeflate(const std::string& data);
-std::string string_gzcompress(const std::string& data);
-
 #define Z_DECODING_ZLIB_GZIP 32
 
-std::string string_gzinflate(const std::string& data);
-std::string string_gzuncompress(const std::string& data);
 
-typedef std::unordered_map<std::string, std::string> string_map;
-int file_unzip(CStringA file, CStringA fn, string_map& dataOut);
+namespace SubtitlesProvidersUtils
+{
+    using regexResult = std::vector<std::string>;
+    using regexResults = std::vector<regexResult>;
+    using stringMap = std::unordered_map<std::string, std::string>;
+    using stringArray = std::vector<std::string>;
 
-int CALLBACK UnRarProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2);
+    const std::regex::flag_type RegexFlags(std::regex_constants::ECMAScript | std::regex_constants::icase | std::regex_constants::optimize);
 
-bool file_unrar(CString fn, string_map& dataOut);
+    int LevenshteinDistance(std::string s, std::string t);
 
-string_map string_uncompress(const std::string& data, const std::string& fileName);
+    std::string StringToHex(const std::string& data);
+    std::string StringToHex(const int& data);
+    std::string StringToHash(const std::string& data, ALG_ID Algid = CALG_MD5);
 
-std::string string_generate_unique_key();
 
-HRESULT string_download(const std::string& url, const string_map& headers, std::string& data, BOOL bAutoRedirect = TRUE, DWORD* dwStatusCode = nullptr);
+    std::string StringEncrypt(const std::string& data, const std::string& key, ALG_ID Algid = CALG_AES_128);
+    std::string StringDecrypt(const std::string& data, const std::string& key, ALG_ID Algid = CALG_AES_128);
 
-HRESULT string_upload(const std::string& url, const string_map& headers, const std::string& content, std::string& data, BOOL bAutoRedirect = TRUE, DWORD* dwStatusCode = nullptr);
+    std::string StringFormat(char const* fmt, ...);
 
-typedef std::vector<std::string> string_array;
-string_array string_tokenize(const std::string& text, const std::string& delimiters, bool blank = false);
+    size_t stringMatch(const std::string& pattern, const std::string& text, regexResults& results);
+    size_t stringMatch(const std::string& pattern, const std::string& text, regexResult& result);
+    size_t stringMatch(const std::regex& pattern, const std::string& text, regexResults& results);
+    size_t stringMatch(const std::regex& pattern, const std::string& text, regexResult& result);
 
-std::string string_trim(const std::string& text, const std::string& characters = " ", int side = 0);
+    std::string StringGzipDeflate(const std::string& data);
+    std::string StringGzipCompress(const std::string& data);
+    std::string StringGzipInflate(const std::string& data);
+    std::string StringGzipUncompress(const std::string& data);
 
-std::string string_replace(const std::string& text, const std::string& find, const std::string& replace);
+    int FileUnzip(CStringA file, CStringA fn, stringMap& dataOut);
+    bool FileUnRar(CString fn, stringMap& dataOut);
+    int CALLBACK UnRarProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2);
 
-std::string LanguagesISO6391(const char delimiter = ',');
+    stringMap StringUncompress(const std::string& data, const std::string& fileName);
+    std::string StringGenerateUniqueKey();
 
-std::string LanguagesISO6392(const char delimiter = ',');
+    HRESULT StringDownload(const std::string& url, const stringMap& headers, std::string& data, BOOL bAutoRedirect = TRUE, DWORD* dwStatusCode = nullptr);
+    HRESULT StringUpload(const std::string& url, const stringMap& headers, const std::string& content, std::string& data, BOOL bAutoRedirect = TRUE, DWORD* dwStatusCode = nullptr);
+
+    stringArray StringTokenize(const std::string& text, const std::string& delimiters, bool blank = false);
+    std::string StringTrim(const std::string& text, const std::string& characters = " ", int side = 0);
+    std::string StringReplace(const std::string& text, const std::string& find, const std::string& replace);
+
+    std::string LanguagesISO6391(const char delimiter = ',');
+    std::string LanguagesISO6392(const char delimiter = ',');
+}

@@ -704,7 +704,6 @@
     <Image Include="res\check_all.bmp" />
     <Image Include="res\check_audio.bmp" />
     <Image Include="res\check_video.bmp" />
-    <Image Include="res\subtitles\favicon_ysubs.ico" />
     <Image Include="res\uncheck_all.bmp" />
   </ItemGroup>
   <ItemGroup>
@@ -712,6 +711,7 @@
     <Image Include="res\subtitles\favicon_podnapisi.ico" />
     <Image Include="res\subtitles\favicon_subdb.ico" />
     <Image Include="res\subtitles\favicon_titlovi.ico" />
+    <Image Include="res\subtitles\favicon_ysubs.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

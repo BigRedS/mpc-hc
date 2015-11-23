@@ -26,13 +26,17 @@
 
 #define DEFINE_SUBTITLESPROVIDER_BEGIN(P, U, I, F)                            \
 class P : public SubtitlesProvider {                                          \
-private:                                                                      \
-    P() { Initialize(); }                                                     \
-    ~P() { Uninitialize(); }                                                  \
-    P(P const&);                                                              \
-    P& operator=(P const&);                                                   \
 public:                                                                       \
-    static P& Instance() { static P that; return that; }                      \
+    P(SubtitlesProviders* pOwner)                                             \
+        : SubtitlesProvider(pOwner) {                                         \
+        Initialize();                                                         \
+    }                                                                         \
+    ~P() { Uninitialize(); }                                                  \
+    P(P const&) = delete;                                                     \
+    P& operator=(P const&) = delete;                                          \
+    static std::shared_ptr<P> Create(SubtitlesProviders* pOwner) {            \
+        return std::make_shared<P>(pOwner);                                   \
+    }                                                                         \
 private:                                                                      \
     using SubtitlesProvider::Login;                                           \
     using SubtitlesProvider::Download;                                        \
@@ -44,27 +48,27 @@ private:                                                                      \
     virtual int Icon() { return I; }                                          \
 private:                                                                      \
     virtual SRESULT Search(const SubtitlesInfo& pFileInfo);                   \
-    virtual SRESULT Download(SubtitlesInfo& pSubtitlesInfo);                  \
-private:
-
-
+    virtual SRESULT Download(SubtitlesInfo& pSubtitlesInfo);
 #define DEFINE_SUBTITLESPROVIDER_END                                          \
 };
 
 DEFINE_SUBTITLESPROVIDER_BEGIN(OpenSubtitles, "http://www.opensubtitles.org", IDI_OPENSUBTITLES, SPF_LOGIN | SPF_HASH | SPF_UPLOAD)
 virtual void Initialize();
-virtual void Uninitialize();
 virtual SRESULT Login(std::string& sUserName, std::string& sPassword);
 virtual SRESULT Hash(SubtitlesInfo& pFileInfo);
 virtual SRESULT Upload(const SubtitlesInfo& pSubtitlesInfo);
-XmlRpcClient* xmlrpc;
+std::unique_ptr<XmlRpcClient> xmlrpc;
 XmlRpcValue token;
 DEFINE_SUBTITLESPROVIDER_END
 
 DEFINE_SUBTITLESPROVIDER_BEGIN(SubDB, "http://api.thesubdb.com", IDI_SUBDB, SPF_HASH | SPF_UPLOAD)
 virtual SRESULT Hash(SubtitlesInfo& pFileInfo);
 virtual SRESULT Upload(const SubtitlesInfo& pSubtitlesInfo);
-virtual std::string UserAgent() { return string_format("SubDB/1.0 (MPC-HC/%s; http://mpc-hc.org)", VersionInfo::GetVersionString()); }
+virtual std::string UserAgent()
+{
+    return SubtitlesProvidersUtils::StringFormat("SubDB/1.0 (MPC-HC/%s; http://mpc-hc.org)",
+                                                 VersionInfo::GetVersionString());
+}
 DEFINE_SUBTITLESPROVIDER_END
 
 DEFINE_SUBTITLESPROVIDER_BEGIN(podnapisi, "http://www.podnapisi.net", IDI_PODNAPISI, SPF_SEARCH)

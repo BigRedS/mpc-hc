@@ -20,21 +20,22 @@
 
 #include "stdafx.h"
 #include "SubtitlesProvider.h"
-#include "MediaInfo/ThirdParty/tinyxml2/tinyxml2.h"
-#include "rapidjson/include/rapidjson/rapidjson.h"
+#include "MediaInfo/library/Source/ThirdParty/base64/base64.h"
+#include "MediaInfo/library/Source/ThirdParty/tinyxml2/tinyxml2.h"
 #include "rapidjson/include/rapidjson/document.h"
 
+using namespace SubtitlesProvidersUtils;
 
 /******************************************************************************
 ** Register providers
 ******************************************************************************/
 void SubtitlesProviders::RegisterProviders()
 {
-    Register<OpenSubtitles>();
-    Register<podnapisi>();
-    Register<titlovi>();
-    Register<SubDB>();
-    Register<ysubs>();
+    Register<OpenSubtitles>(this);
+    Register<podnapisi>(this);
+    Register<titlovi>(this);
+    Register<SubDB>(this);
+    Register<ysubs>(this);
 }
 
 #define CheckAbortAndReturn() { if (IsAborting()) return SR_ABORTED; }
@@ -45,13 +46,8 @@ void SubtitlesProviders::RegisterProviders()
 
 void OpenSubtitles::Initialize()
 {
-    xmlrpc = DEBUG_NEW XmlRpcClient("http://api.opensubtitles.org/xml-rpc");
-    if (xmlrpc) { xmlrpc->setIgnoreCertificateAuthority(); }
-}
-
-void OpenSubtitles::Uninitialize()
-{
-    if (xmlrpc != nullptr) { delete xmlrpc; }
+    xmlrpc = std::make_unique<XmlRpcClient>("http://api.opensubtitles.org/xml-rpc");
+    xmlrpc->setIgnoreCertificateAuthority();
 }
 
 SRESULT OpenSubtitles::Login(std::string& sUserName, std::string& sPassword)
@@ -74,19 +70,25 @@ SRESULT OpenSubtitles::Hash(SubtitlesInfo& pFileInfo)
     UINT64 fileHash = pFileInfo.fileSize;
     if (pFileInfo.pAsyncReader) {
         UINT64 position = 0;
-        for (UINT64 tmp = 0, i = 0; i < PROBE_SIZE / sizeof(tmp) && SUCCEEDED(pFileInfo.pAsyncReader->SyncRead(position, sizeof(tmp), (BYTE*)&tmp)); fileHash += tmp, position += sizeof(tmp), ++i);
+        for (UINT64 tmp = 0, i = 0;
+                i < PROBE_SIZE / sizeof(tmp) && SUCCEEDED(pFileInfo.pAsyncReader->SyncRead(position, sizeof(tmp), (BYTE*)&tmp));
+                fileHash += tmp, position += sizeof(tmp), ++i);
         position = std::max((UINT64)0, (UINT64)(pFileInfo.fileSize - PROBE_SIZE));
-        for (UINT64 tmp = 0, i = 0; i < PROBE_SIZE / sizeof(tmp) && SUCCEEDED(pFileInfo.pAsyncReader->SyncRead(position, sizeof(tmp), (BYTE*)&tmp)); fileHash += tmp, position += sizeof(tmp), ++i);
+        for (UINT64 tmp = 0, i = 0;
+                i < PROBE_SIZE / sizeof(tmp) && SUCCEEDED(pFileInfo.pAsyncReader->SyncRead(position, sizeof(tmp), (BYTE*)&tmp));
+                fileHash += tmp, position += sizeof(tmp), ++i);
     } else {
         CFile file;
         CFileException fileException;
-        if (file.Open(CString(pFileInfo.filePath.c_str()), CFile::modeRead | CFile::osSequentialScan | CFile::shareDenyNone | CFile::typeBinary, &fileException)) {
+        if (file.Open(CString(pFileInfo.filePath.c_str()),
+                      CFile::modeRead | CFile::osSequentialScan | CFile::shareDenyNone | CFile::typeBinary,
+                      &fileException)) {
             for (UINT64 tmp = 0, i = 0; i < PROBE_SIZE / sizeof(tmp) && file.Read(&tmp, sizeof(tmp)); fileHash += tmp, ++i);
             file.Seek(std::max((UINT64)0, (UINT64)(pFileInfo.fileSize - PROBE_SIZE)), CFile::begin);
             for (UINT64 tmp = 0, i = 0; i < PROBE_SIZE / sizeof(tmp) && file.Read(&tmp, sizeof(tmp)); fileHash += tmp, ++i);
         }
     }
-    pFileInfo.fileHash = string_format("%016I64x", fileHash);
+    pFileInfo.fileHash = StringFormat("%016I64x", fileHash);
     return SR_SUCCEEDED;
 }
 
@@ -120,8 +122,8 @@ SRESULT OpenSubtitles::Search(const SubtitlesInfo& pFileInfo)
         pSubtitlesInfo.downloadCount = data["SubDownloadsCnt"];
 
         pSubtitlesInfo.fileName = (const char*)data["SubFileName"];
-        regex_result results;
-        string_regex("\"([^\"]+)\" (.+)", (const char*)data["MovieName"], results);
+        regexResult results;
+        stringMatch("\"([^\"]+)\" (.+)", (const char*)data["MovieName"], results);
         if (!results.empty()) {
             pSubtitlesInfo.title = results[0];
             pSubtitlesInfo.title2 = results[1];
@@ -160,7 +162,7 @@ SRESULT OpenSubtitles::Upload(const SubtitlesInfo& pSubtitlesInfo)
     args[0] = token;
 
     //TODO: Ask  how to obtain commented values !!!
-    args[1]["cd1"]["subhash"] = string_hash(pSubtitlesInfo.fileContents, CALG_MD5);
+    args[1]["cd1"]["subhash"] = StringToHash(pSubtitlesInfo.fileContents, CALG_MD5);
     args[1]["cd1"]["subfilename"] = pSubtitlesInfo.fileName + ".srt";
     args[1]["cd1"]["moviehash"] = pSubtitlesInfo.fileHash;
     args[1]["cd1"]["moviebytesize"] = (int)pSubtitlesInfo.fileSize;
@@ -182,7 +184,7 @@ SRESULT OpenSubtitles::Upload(const SubtitlesInfo& pSubtitlesInfo)
         } else if (!pSubtitlesInfo.imdbid.empty()) {
             args[1]["baseinfo"]["idmovieimdb"] = pSubtitlesInfo.imdbid;
         } else {
-            std::string title(string_replace(pSubtitlesInfo.title, "and", "&"));
+            std::string title(StringReplace(pSubtitlesInfo.title, "and", "&"));
             if (!args[1]["baseinfo"]["idmovieimdb"].valid()) {
                 XmlRpcValue _args, _result;
                 _args[0] = token;
@@ -190,18 +192,16 @@ SRESULT OpenSubtitles::Upload(const SubtitlesInfo& pSubtitlesInfo)
                 if (!xmlrpc->execute("CheckMovieHash", _args, _result)) { return SR_FAILED; }
 
                 if (_result["data"].getType() == XmlRpcValue::Type::TypeStruct) {
-
-                    //regex_results results;
-                    //string_regex("\"(.+)\" (.+)", (const char*)data["MovieName"], results);
+                    //regexResults results;
+                    //stringMatch("\"(.+)\" (.+)", (const char*)data["MovieName"], results);
                     //if (!results.empty()) {
                     //    pSubtitlesInfo.title = results[0][0];
                     //    pSubtitlesInfo.title2 = results[0][1];
                     //} else {
                     //    pSubtitlesInfo.title = (const char*)data["MovieName"];
                     //}
-
-                    regex_results results;
-                    string_regex("\"(.+)\" .+|(.+)", string_replace((const char*)_result["data"][pSubtitlesInfo.fileHash]["MovieName"], "and", "&"), results);
+                    regexResults results;
+                    stringMatch("\"(.+)\" .+|(.+)", StringReplace((const char*)_result["data"][pSubtitlesInfo.fileHash]["MovieName"], "and", "&"), results);
                     std::string _title(results[0][0] + results[0][1]);
 
                     if (_stricmp(title.c_str(), _title.c_str()) == 0 /*&& (pSubtitlesInfo.year == -1 || (pSubtitlesInfo.year != -1 && pSubtitlesInfo.year == atoi(_result["data"][pSubtitlesInfo.fileHash]["MovieYear"])))*/) {
@@ -219,8 +219,8 @@ SRESULT OpenSubtitles::Upload(const SubtitlesInfo& pSubtitlesInfo)
                 if (_result["data"].getType() == XmlRpcValue::Type::TypeArray) {
                     int nCount = _result["data"][pSubtitlesInfo.fileHash].size();
                     for (int i = 0; i < nCount; ++i) {
-                        regex_results results;
-                        string_regex("\"(.+)\" .+|(.+)", string_replace((const char*)_result["data"][pSubtitlesInfo.fileHash][i]["MovieName"], "and", "&"), results);
+                        regexResults results;
+                        stringMatch("\"(.+)\" .+|(.+)", StringReplace((const char*)_result["data"][pSubtitlesInfo.fileHash][i]["MovieName"], "and", "&"), results);
                         std::string _title(results[0][0] + results[0][1]);
 
                         if (_stricmp(title.c_str(), _title.c_str()) == 0 /*&& (pSubtitlesInfo.year == -1 || (pSubtitlesInfo.year != -1 && pSubtitlesInfo.year == atoi(_result["data"][pSubtitlesInfo.fileHash][i]["MovieYear"])))*/) {
@@ -239,8 +239,8 @@ SRESULT OpenSubtitles::Upload(const SubtitlesInfo& pSubtitlesInfo)
                 if (_result["data"].getType() == XmlRpcValue::Type::TypeArray) {
                     int nCount = _result["data"].size();
                     for (int i = 0; i < nCount; ++i) {
-                        regex_results results;
-                        string_regex("(.+) [(](\\d{4})[)]", string_replace((const char*)_result["data"][i]["title"], "and", "&"), results);
+                        regexResults results;
+                        stringMatch("(.+) [(](\\d{4})[)]", StringReplace((const char*)_result["data"][i]["title"], "and", "&"), results);
                         if (results.size() == 1) {
                             std::string _title(results[0][0]);
 
@@ -277,7 +277,7 @@ SRESULT OpenSubtitles::Upload(const SubtitlesInfo& pSubtitlesInfo)
             //args[1]["baseinfo"]["highdefinition"];
             //args[1]["baseinfo"]["automatictranslation"];
 
-            args[1]["cd1"]["subcontent"] = Base64::encode(string_gzcompress(pSubtitlesInfo.fileContents));
+            args[1]["cd1"]["subcontent"] = Base64::encode(StringGzipCompress(pSubtitlesInfo.fileContents));
 
             if (!xmlrpc->execute("UploadSubtitles", args, result)) { return SR_FAILED; }
             //#ifdef _DEBUG
@@ -329,7 +329,7 @@ SRESULT SubDB::Hash(SubtitlesInfo& pFileInfo)
             file.Read(&buffer[PROBE_SIZE], PROBE_SIZE);
         }
     }
-    pFileInfo.fileHash = string_hash(std::string((char*)&buffer[0], buffer.size()), CALG_MD5);
+    pFileInfo.fileHash = StringToHash(std::string((char*)&buffer[0], buffer.size()), CALG_MD5);
     return SR_SUCCEEDED;
 }
 
@@ -337,10 +337,10 @@ SRESULT SubDB::Search(const SubtitlesInfo& pFileInfo)
 {
     SRESULT searchResult = SR_UNDEFINED;
     std::string data;
-    searchResult = Download(string_format("http://api.thesubdb.com/?action=search&hash=%s", pFileInfo.fileHash.c_str()), "", data);
+    searchResult = Download(StringFormat("http://api.thesubdb.com/?action=search&hash=%s", pFileInfo.fileHash.c_str()), "", data);
 
     if (!data.empty()) {
-        string_array result(string_tokenize(data, ","));
+        stringArray result(StringTokenize(data, ","));
         for (const auto& iter : result) {
             CheckAbortAndReturn();
             if (CheckLanguage(iter)) {
@@ -363,29 +363,29 @@ SRESULT SubDB::Search(const SubtitlesInfo& pFileInfo)
 
 SRESULT SubDB::Download(SubtitlesInfo& pSubtitlesInfo)
 {
-    return Download(string_format("http://api.thesubdb.com/?action=download&hash=%s&language=%s", pSubtitlesInfo.id.c_str(), pSubtitlesInfo.languageCode.c_str()), "", pSubtitlesInfo.fileContents);
+    return Download(StringFormat("http://api.thesubdb.com/?action=download&hash=%s&language=%s", pSubtitlesInfo.id.c_str(), pSubtitlesInfo.languageCode.c_str()), "", pSubtitlesInfo.fileContents);
 }
 
 SRESULT SubDB::Upload(const SubtitlesInfo& pSubtitlesInfo)
 {
 #define MULTIPART_BOUNDARY "xYzZY"
-    std::string url(string_format("http://api.thesubdb.com/?action=upload&hash=%s", pSubtitlesInfo.fileHash.c_str()));
-    string_map headers({
+    std::string url(StringFormat("http://api.thesubdb.com/?action=upload&hash=%s", pSubtitlesInfo.fileHash.c_str()));
+    stringMap headers({
         { "User-Agent", UserAgent() },
         { "Content-Type", "multipart/form-data; boundary=" MULTIPART_BOUNDARY },
     });
 
     std::string content, data;
-    content += string_format("--%s\r\nContent-Disposition: form-data; name=\"%s\"\r\n\r\n%s\r\n", MULTIPART_BOUNDARY, "hash", pSubtitlesInfo.fileHash.c_str());
-    content += string_format("--%s\r\nContent-Disposition: form-data; name=\"%s\"; filename=\"%s.%s\"\r\nContent-Type: application/octet-stream\r\nContent-Transfer-Encoding: binary\r\n\r\n",
-                             MULTIPART_BOUNDARY, "file", pSubtitlesInfo.fileHash.c_str(), "srt");
+    content += StringFormat("--%s\r\nContent-Disposition: form-data; name=\"%s\"\r\n\r\n%s\r\n", MULTIPART_BOUNDARY, "hash", pSubtitlesInfo.fileHash.c_str());
+    content += StringFormat("--%s\r\nContent-Disposition: form-data; name=\"%s\"; filename=\"%s.%s\"\r\nContent-Type: application/octet-stream\r\nContent-Transfer-Encoding: binary\r\n\r\n",
+                            MULTIPART_BOUNDARY, "file", pSubtitlesInfo.fileHash.c_str(), "srt");
     content += pSubtitlesInfo.fileContents;
-    content += string_format("\r\n--%s--\r\n", MULTIPART_BOUNDARY);
+    content += StringFormat("\r\n--%s--\r\n", MULTIPART_BOUNDARY);
 
     CheckAbortAndReturn();
 
     DWORD dwStatusCode = NULL;
-    string_upload(url, headers, content, data, FALSE, &dwStatusCode);
+    StringUpload(url, headers, content, data, FALSE, &dwStatusCode);
 
     switch (dwStatusCode) {
         case 201:
@@ -465,7 +465,7 @@ SRESULT podnapisi::Search(const SubtitlesInfo& pFileInfo)
 
         std::string search(pFileInfo.title);
         if (!pFileInfo.country.empty()) { search += " " + pFileInfo.country; }
-        search = std::regex_replace(search, std::regex(" and | *[!?&':] *", regex_flags), " ");
+        search = std::regex_replace(search, std::regex(" and | *[!?&':] *", RegexFlags), " ");
 
         std::string url("http://simple.podnapisi.net/en/ppodnapisi/search");
         url += "/sXML/1";
@@ -537,12 +537,12 @@ SRESULT podnapisi::Search(const SubtitlesInfo& pFileInfo)
                         pSubtitlesInfo.imdbid = GetChildElementText(pSubtitleElmt, "movieId");
                         pSubtitlesInfo.frameRate = atof(GetChildElementText(pSubtitleElmt, "fps").c_str());
 
-                        string_array fileNames(string_tokenize(pSubtitlesInfo.releaseName, " "));
+                        stringArray fileNames(StringTokenize(pSubtitlesInfo.releaseName, " "));
                         if (fileNames.empty()) {
                             std::string str = pSubtitlesInfo.title;
                             if (!year.empty()) { str += " " + year; }
-                            if (pSubtitlesInfo.seasonNumber > 0) { str += string_format(" S%02d", pSubtitlesInfo.seasonNumber); }
-                            if (pSubtitlesInfo.episodeNumber > 0) { str += string_format("%sE%02d", (pSubtitlesInfo.seasonNumber > 0) ? "" : " ", pSubtitlesInfo.episodeNumber); }
+                            if (pSubtitlesInfo.seasonNumber > 0) { str += StringFormat(" S%02d", pSubtitlesInfo.seasonNumber); }
+                            if (pSubtitlesInfo.episodeNumber > 0) { str += StringFormat("%sE%02d", (pSubtitlesInfo.seasonNumber > 0) ? "" : " ", pSubtitlesInfo.episodeNumber); }
                             str += " (*)";
                             fileNames.push_back(str);
                         }
@@ -569,8 +569,8 @@ SRESULT podnapisi::Download(SubtitlesInfo& pSubtitlesInfo)
     std::string temp;
     searchResult = Download(pSubtitlesInfo.url, "", temp);
 
-    regex_results results;
-    string_regex(std::regex("(download/i/" + pSubtitlesInfo.id + "/[^\"]*)\"", regex_flags), temp, results);
+    regexResults results;
+    stringMatch(std::regex("(download/i/" + pSubtitlesInfo.id + "/[^\"]*)\"", RegexFlags), temp, results);
     for (const auto& iter : results) {
         CheckAbortAndReturn();
         searchResult = Download("http://simple.podnapisi.net/en/ppodnapisi/" + iter[0], "", pSubtitlesInfo.fileContents);
@@ -632,7 +632,7 @@ SRESULT titlovi::Search(const SubtitlesInfo& pFileInfo)
     }
 
     std::string KEY = "WC1ERVYtREVTS1RPUF9maWUyYS1hMVJzYS1hSHc0UA==";
-    std::string url(string_format("http://api.titlovi.com/xml_get_api.ashx?x-dev_api_id=%s&uiculture=en&forcefilename=true", Base64::decode(KEY).c_str()));
+    std::string url(StringFormat("http://api.titlovi.com/xml_get_api.ashx?x-dev_api_id=%s&uiculture=en&forcefilename=true", Base64::decode(KEY).c_str()));
     url += "&mt=" + (pFileInfo.seasonNumber != -1 ? std::to_string(2) : std::to_string(1));
     url += "&keyword=" + UrlEncode(pFileInfo.title.c_str());
     url += (pFileInfo.seasonNumber != -1 ? "&season=" + std::to_string(pFileInfo.seasonNumber) : "");
@@ -699,8 +699,8 @@ SRESULT titlovi::Search(const SubtitlesInfo& pFileInfo)
                         pSubtitlesInfo.episodeNumber = atoi(GetChildElementText(pSubtitleChildElmt, "episode").c_str());
                     }
                     pSubtitlesInfo.fileName = pSubtitlesInfo.title + " " + std::to_string(pSubtitlesInfo.year);
-                    if (pSubtitlesInfo.seasonNumber > 0) { pSubtitlesInfo.fileName += string_format(" S%02d", pSubtitlesInfo.seasonNumber); }
-                    if (pSubtitlesInfo.episodeNumber > 0) { pSubtitlesInfo.fileName += string_format("%sE%02d", (pSubtitlesInfo.seasonNumber > 0) ? "" : " ", pSubtitlesInfo.episodeNumber); }
+                    if (pSubtitlesInfo.seasonNumber > 0) { pSubtitlesInfo.fileName += StringFormat(" S%02d", pSubtitlesInfo.seasonNumber); }
+                    if (pSubtitlesInfo.episodeNumber > 0) { pSubtitlesInfo.fileName += StringFormat("%sE%02d", (pSubtitlesInfo.seasonNumber > 0) ? "" : " ", pSubtitlesInfo.episodeNumber); }
                     pSubtitlesInfo.fileName += " " + pSubtitlesInfo.releaseName;
                     pSubtitlesInfo.fileName += " (*)";
 
@@ -755,9 +755,9 @@ SRESULT ysubs::Search(const SubtitlesInfo& pFileInfo)
     SRESULT searchResult = SR_UNDEFINED;
 
     if (pFileInfo.year && pFileInfo.seasonNumber == -1 && pFileInfo.episodeNumber == -1) {
-        std::string url(string_format("https://yts.re/api/list.json?keywords=%s+%d", UrlEncode(string_replace(pFileInfo.title, " ", "+").c_str()), pFileInfo.year));
+        std::string apisListUrl(StringFormat("https://yts.re/api/list.json?keywords=%s+%d", UrlEncode(StringReplace(pFileInfo.title, " ", "+").c_str()), pFileInfo.year));
         std::string data;
-        searchResult = Download(url, "", data);
+        searchResult = Download(apisListUrl, "", data);
 
         rapidjson::Document d;
         if (d.ParseInsitu(&data[0]).HasParseError()) {
@@ -774,9 +774,9 @@ SRESULT ysubs::Search(const SubtitlesInfo& pFileInfo)
                     if (imdb_ids.find(imdb) == imdb_ids.end()) {
                         imdb_ids.insert(imdb);
 
-                        std::string url(string_format("http://api.ysubs.com/subs/%s", imdb.c_str()));
+                        std::string apiSubsUrl(StringFormat("http://api.ysubs.com/subs/%s", imdb.c_str()));
                         std::string data1;
-                        searchResult = Download(url, "", data1);
+                        searchResult = Download(apiSubsUrl, "", data1);
                         rapidjson::Document d1;
                         if (d1.ParseInsitu(&data1[0]).HasParseError()) {
                             return SR_FAILED;

@@ -72,5 +72,5 @@ protected:
     afx_msg void OnItemChanged(NMHDR* pNMHDR, LRESULT* pResult);
 
 private:
-    SubtitlesProviders& m_pSubtitlesProviders;
+    SubtitlesProviders& m_subtitlesProviders;
 };

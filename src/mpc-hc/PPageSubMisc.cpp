@@ -39,7 +39,7 @@ CPPageSubMisc::CPPageSubMisc()
     , m_strSubtitlesProviders()
     , m_strSubtitlesLanguageOrder()
     , m_strAutoloadPaths()
-    , m_pSubtitlesProviders(SubtitlesProviders::Instance())
+    , m_subtitlesProviders(SubtitlesProviders::Instance())
 {
 }
 
@@ -66,7 +66,7 @@ BOOL CPPageSubMisc::OnInitDialog()
 {
     __super::OnInitDialog();
 
-    const auto& s = AfxGetAppSettings();
+    const CAppSettings& s = AfxGetAppSettings();
 
     m_fPreferDefaultForcedSubtitles = s.bPreferDefaultForcedSubtitles;
     m_fPrioritizeExternalSubtitles = s.fPrioritizeExternalSubtitles;
@@ -87,7 +87,7 @@ BOOL CPPageSubMisc::OnInitDialog()
                             | LVS_EX_DOUBLEBUFFER | LVS_EX_FULLROWSELECT
                             | LVS_EX_CHECKBOXES | LVS_EX_LABELTIP);
 
-    m_list.SetImageList(&m_pSubtitlesProviders.GetImageList(), LVSIL_SMALL);
+    m_list.SetImageList(&m_subtitlesProviders.GetImageList(), LVSIL_SMALL);
 
     CArray<int> columnWidth;
     if (columnWidth.GetCount() != COL_TOTAL_COLUMNS) {
@@ -106,13 +106,13 @@ BOOL CPPageSubMisc::OnInitDialog()
     m_list.DeleteAllItems();
 
     int i = 0;
-    for (const auto& iter : m_pSubtitlesProviders.Providers()) {
+    for (const auto& iter : m_subtitlesProviders.Providers()) {
         int iItem = m_list.InsertItem((int)i++, CString(iter->Name().c_str()), iter->GetIconIndex());
         m_list.SetItemText(iItem, COL_USERNAME, UTF8To16(iter->UserName().c_str()));
         CString languages(UTF8To16(iter->Languages().c_str()));
         m_list.SetItemText(iItem, COL_LANGUAGES, languages.GetLength() ? languages : ResStr(IDS_SUBPP_DLG_LANGUAGES_ERROR));
         m_list.SetCheck(iItem, iter->Enabled(SPF_SEARCH));
-        m_list.SetItemData(iItem, (DWORD_PTR)(iter));
+        m_list.SetItemData(iItem, (DWORD_PTR)(iter.get()));
     }
 
     m_list.SetRedraw(TRUE);
@@ -132,7 +132,7 @@ BOOL CPPageSubMisc::OnApply()
 {
     UpdateData();
 
-    auto& s = AfxGetAppSettings();
+    CAppSettings& s = AfxGetAppSettings();
 
     s.bPreferDefaultForcedSubtitles = !!m_fPreferDefaultForcedSubtitles;
     s.fPrioritizeExternalSubtitles = !!m_fPrioritizeExternalSubtitles;
@@ -145,11 +145,11 @@ BOOL CPPageSubMisc::OnApply()
     s.strSubtitlesLanguageOrder = m_strSubtitlesLanguageOrder;
 
     for (int i = 0; i < m_list.GetItemCount(); ++i) {
-        SubtitlesProvider* provider = (SubtitlesProvider*)(m_list.GetItemData(i));
+        SubtitlesProvider* provider = reinterpret_cast<SubtitlesProvider*>(m_list.GetItemData(i));
         provider->Enabled(SPF_SEARCH, m_list.GetCheck(i));
     }
 
-    s.strSubtitlesProviders = CString(m_pSubtitlesProviders.WriteSettings().c_str());
+    s.strSubtitlesProviders = CString(m_subtitlesProviders.WriteSettings().c_str());
 
     return __super::OnApply();
 }
@@ -201,8 +201,8 @@ void CPPageSubMisc::OnRightClick(NMHDR* pNMHDR, LRESULT* pResult)
                 if (ERROR_SUCCESS == PromptForCredentials(GetSafeHwnd(),
                                                           ResStr(IDS_SUB_CREDENTIALS_TITLE), ResStr(IDS_SUB_CREDENTIALS_MSG) + CString(provider.Url().c_str()),
                                                           szDomain, szUser, szPass, /*&bSave*/nullptr)) {
-                    provider.UserName((const char*)UTF16To8(szUser));
-                    provider.Password((const char*)UTF16To8(szPass));
+                    provider.UserName(static_cast<const char*>(UTF16To8(szUser)));
+                    provider.Password(static_cast<const char*>(UTF16To8(szPass)));
                     m_list.SetItemText(lpnmlv->iItem, 1, szUser);
                     SetModified();
                 }
@@ -214,18 +214,16 @@ void CPPageSubMisc::OnRightClick(NMHDR* pNMHDR, LRESULT* pResult)
                 m_list.SetItemText(lpnmlv->iItem, 1, _T(""));
                 SetModified();
                 break;
-            case MOVE_UP: {
-                m_pSubtitlesProviders.MoveUp(lpnmlv->iItem);
+            case MOVE_UP:
+                m_subtitlesProviders.MoveUp(lpnmlv->iItem);
                 ListView_SortItemsEx(m_list.GetSafeHwnd(), SortCompare, m_list.GetSafeHwnd());
                 SetModified();
                 break;
-            }
-            case MOVE_DOWN: {
-                m_pSubtitlesProviders.MoveDown(lpnmlv->iItem);
+            case MOVE_DOWN:
+                m_subtitlesProviders.MoveDown(lpnmlv->iItem);
                 ListView_SortItemsEx(m_list.GetSafeHwnd(), SortCompare, m_list.GetSafeHwnd());
                 SetModified();
                 break;
-            }
             default:
                 break;
         }

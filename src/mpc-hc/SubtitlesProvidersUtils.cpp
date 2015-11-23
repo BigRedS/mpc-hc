@@ -20,9 +20,7 @@
 
 #include "stdafx.h"
 #include <afxinet.h>
-
 #include <WinCrypt.h>
-
 #include <sstream>
 
 #if !USE_STATIC_UNRAR
@@ -33,14 +31,12 @@
 
 #include "zlib/zlib.h"
 #include "zlib/zutil.h"
-
 #include "zlib/minizip/unzip.h"
 
 #include "SubtitlesProvidersUtils.h"
 #include "mplayerc.h"
 
-
-int LevenshteinDistance(std::string s, std::string t)
+int SubtitlesProvidersUtils::LevenshteinDistance(std::string s, std::string t)
 {
     s = CStringA(s.c_str()).MakeLower();
     t = CStringA(t.c_str()).MakeLower();
@@ -82,23 +78,23 @@ int LevenshteinDistance(std::string s, std::string t)
     return v1[t.length()];
 }
 
-std::string string_hex(const std::string& data)
+std::string SubtitlesProvidersUtils::StringToHex(const std::string& data)
 {
     std::ostringstream oss;
     for (auto& iter : data) {
         oss.fill('0');
         oss.width(2);
-        oss << std::hex << static_cast<const int>(iter);
+        oss << std::hex << iter;
     }
     return oss.str();
 }
 
-std::string string_hex(const int& data)
+std::string SubtitlesProvidersUtils::StringToHex(const int& data)
 {
     std::ostringstream oss;
     oss.fill('0');
     oss.width(8);
-    oss << std::hex << static_cast<const int>(data);
+    oss << std::hex << data;
     return oss.str();
 }
 
@@ -127,7 +123,7 @@ std::string string_bytes(const std::string& data)
     return oss.str();
 }
 
-std::string string_hash(const std::string& data, ALG_ID Algid)
+std::string SubtitlesProvidersUtils::StringToHash(const std::string& data, ALG_ID Algid)
 {
     std::string result;
     HCRYPTPROV hCryptProv = NULL;
@@ -156,7 +152,7 @@ std::string string_hash(const std::string& data, ALG_ID Algid)
     return result;
 }
 
-std::string string_encrypt(const std::string& data, const std::string& key, ALG_ID Algid)
+std::string SubtitlesProvidersUtils::StringEncrypt(const std::string& data, const std::string& key, ALG_ID Algid)
 {
     std::string result;
     HCRYPTPROV hCryptProv = NULL;
@@ -185,7 +181,7 @@ std::string string_encrypt(const std::string& data, const std::string& key, ALG_
     return result;
 }
 
-std::string string_decrypt(const std::string& data, const std::string& key, ALG_ID Algid)
+std::string SubtitlesProvidersUtils::StringDecrypt(const std::string& data, const std::string& key, ALG_ID Algid)
 {
     std::string result;
     if (!data.empty()) {
@@ -212,7 +208,7 @@ std::string string_decrypt(const std::string& data, const std::string& key, ALG_
     return result;
 }
 
-std::string string_format(const char* fmt, ...)
+std::string SubtitlesProvidersUtils::StringFormat(const char* fmt, ...)
 {
     int nSize = 0x400;
     std::vector<char> buffer(nSize);
@@ -225,20 +221,20 @@ std::string string_format(const char* fmt, ...)
     return std::string(&buffer[0], nSize);
 }
 
-size_t string_regex(const std::string& pattern, const std::string& text, regex_results& results)
+size_t SubtitlesProvidersUtils::stringMatch(const std::string& pattern, const std::string& text, regexResults& results)
 {
-    std::regex regex_pattern(pattern, regex_flags);
-    return string_regex(regex_pattern, text, results);
+    std::regex regex_pattern(pattern, RegexFlags);
+    return stringMatch(regex_pattern, text, results);
 }
 
-size_t string_regex(const std::regex& pattern, const std::string& text, regex_results& results)
+size_t SubtitlesProvidersUtils::stringMatch(const std::regex& pattern, const std::string& text, regexResults& results)
 {
     results.clear();
 
     std::string data(text);
     std::smatch match_pieces;
     while (std::regex_search(data, match_pieces, pattern)) {
-        regex_result result;
+        regexResult result;
         for (const auto& match : match_pieces) {
             if (match != *match_pieces.begin()) {
                 result.push_back(match.str());
@@ -250,13 +246,13 @@ size_t string_regex(const std::regex& pattern, const std::string& text, regex_re
     return results.size();
 }
 
-size_t string_regex(const std::string& pattern, const std::string& text, regex_result& result)
+size_t SubtitlesProvidersUtils::stringMatch(const std::string& pattern, const std::string& text, regexResult& result)
 {
-    std::regex regex_pattern(pattern, regex_flags);
-    return string_regex(regex_pattern, text, result);
+    std::regex regex_pattern(pattern, RegexFlags);
+    return stringMatch(regex_pattern, text, result);
 }
 
-size_t string_regex(const std::regex& pattern, const std::string& text, regex_result& result)
+size_t SubtitlesProvidersUtils::stringMatch(const std::regex& pattern, const std::string& text, regexResult& result)
 {
     result.clear();
 
@@ -270,7 +266,7 @@ size_t string_regex(const std::regex& pattern, const std::string& text, regex_re
     return result.size();
 }
 
-std::string string_gzdeflate(const std::string& data)
+std::string SubtitlesProvidersUtils::StringGzipDeflate(const std::string& data)
 {
     std::string result;
 
@@ -295,7 +291,7 @@ std::string string_gzdeflate(const std::string& data)
     return result;
 }
 
-std::string string_gzcompress(const std::string& data)
+std::string SubtitlesProvidersUtils::StringGzipCompress(const std::string& data)
 {
     std::string result;
 
@@ -321,7 +317,7 @@ std::string string_gzcompress(const std::string& data)
     return result;
 }
 
-std::string string_gzinflate(const std::string& data)
+std::string SubtitlesProvidersUtils::StringGzipInflate(const std::string& data)
 {
     std::string result;
 
@@ -332,21 +328,20 @@ std::string string_gzinflate(const std::string& data)
     inflate_stream.next_in = (BYTE*)data.c_str();
     inflate_stream.avail_in = (UINT)data.length();
 
-    int ret = Z_OK;
-    if ((ret = inflateInit2(&inflate_stream, DEF_WBITS + Z_DECODING_ZLIB_GZIP)) == Z_OK) {
+    if (inflateInit2(&inflate_stream, DEF_WBITS + Z_DECODING_ZLIB_GZIP) == Z_OK) {
         do {
             inflate_stream.next_out = &buffer[0];
             inflate_stream.avail_out = buffer_len;
-            if ((ret = inflate(&inflate_stream, Z_NO_FLUSH)) >= Z_OK) {
+            if (inflate(&inflate_stream, Z_NO_FLUSH) >= Z_OK) {
                 result.append((char*)&buffer[0], buffer_len - inflate_stream.avail_out);
             } else { break; }
         } while (inflate_stream.avail_out == 0);
-        ret = inflateEnd(&inflate_stream);
+        inflateEnd(&inflate_stream);
     }
     return result;
 }
 
-std::string string_gzuncompress(const std::string& data)
+std::string SubtitlesProvidersUtils::StringGzipUncompress(const std::string& data)
 {
     std::string result;
 
@@ -372,22 +367,20 @@ std::string string_gzuncompress(const std::string& data)
     return result;
 }
 
-int file_unzip(CStringA file, CStringA fn, string_map& dataOut)
+int SubtitlesProvidersUtils::FileUnzip(CStringA file, CStringA fn, stringMap& dataOut)
 {
-#define dir_delimter '/'
 #define MAX_FILENAME 512
 #define READ_SIZE 8192
+
     // Open the zip file
     unzFile zipfile = unzOpen(file);
     if (zipfile == nullptr) {
-        printf("%s: not found\n");
         return -1;
     }
 
     // Get info about the zip file
     unz_global_info global_info;
     if (unzGetGlobalInfo(zipfile, &global_info) != UNZ_OK) {
-        printf("could not read file global info\n");
         unzClose(zipfile);
         return -1;
     }
@@ -401,27 +394,23 @@ int file_unzip(CStringA file, CStringA fn, string_map& dataOut)
         unz_file_info file_info;
         char filename[MAX_FILENAME];
         if (unzGetCurrentFileInfo(zipfile, &file_info, filename, MAX_FILENAME, nullptr, 0, nullptr, 0) != UNZ_OK) {
-            printf("could not read file info\n");
             unzClose(zipfile);
             return -1;
         }
         CStringA subfn = filename;
         if ((fn.GetLength() && fn == filename) || (/*!fn.GetLength() && */(!subfn.Right(4).CompareNoCase(".sub") || !subfn.Right(4).CompareNoCase(".srt")))) {
             // Entry is a file, so extract it.
-            printf("file:%s\n", filename);
             if (unzOpenCurrentFile(zipfile) != UNZ_OK) {
-                printf("could not open file\n");
                 unzClose(zipfile);
                 return -1;
             }
 
             std::string data;
             data.reserve(file_info.uncompressed_size);
-            int error = UNZ_OK;
+            int error;
             do {
                 error = unzReadCurrentFile(zipfile, read_buffer, READ_SIZE);
                 if (error < 0) {
-                    printf("error %d\n", error);
                     unzCloseCurrentFile(zipfile);
                     unzClose(zipfile);
                     return -1;
@@ -432,15 +421,14 @@ int file_unzip(CStringA file, CStringA fn, string_map& dataOut)
                     data.append(read_buffer, error);
                 }
             } while (error > 0);
-            dataOut.insert(std::pair<std::string, std::string>(filename, data));
+            dataOut.emplace(filename, data);
         }
 
         unzCloseCurrentFile(zipfile);
 
         // Go the the next entry listed in the zip file.
-        if ((i + 1) < global_info.number_entry) {
+        if (i + 1 < global_info.number_entry) {
             if (unzGoToNextFile(zipfile) != UNZ_OK) {
-                printf("cound not read next file\n");
                 unzClose(zipfile);
                 return -1;
             }
@@ -451,7 +439,7 @@ int file_unzip(CStringA file, CStringA fn, string_map& dataOut)
     return 0;
 }
 
-int CALLBACK UnRarProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2)
+int CALLBACK SubtitlesProvidersUtils::UnRarProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2)
 {
     if (msg == UCM_PROCESSDATA) {
         std::string* data((std::string*)UserData);
@@ -460,7 +448,7 @@ int CALLBACK UnRarProc(UINT msg, LPARAM UserData, LPARAM P1, LPARAM P2)
     return 1;
 }
 
-bool file_unrar(CString fn, string_map& dataOut)
+bool SubtitlesProvidersUtils::FileUnRar(CString fn, stringMap& dataOut)
 {
 #if !USE_STATIC_UNRAR
 #ifdef _WIN64
@@ -546,25 +534,25 @@ bool file_unrar(CString fn, string_map& dataOut)
     return true;
 }
 
-string_map string_uncompress(const std::string& data, const std::string& fileName)
+SubtitlesProvidersUtils::stringMap SubtitlesProvidersUtils::StringUncompress(const std::string& data,
+        const std::string& fileName)
 {
-    string_map result;
-
+    stringMap result;
     static const char gzip[] = { 0x1F, char(0x8B) };
-    static const char zlib[4][2] = { { 0x78, char(0xDA) }, { 0x78, char(0x9C) }, { 0x78, char(0x5E) }, { 0x78, char(0x01) } };
+    static const char zlib[4][2] = { { 0x78, char(0xDA) }, { 0x78, char(0x9C) }, { 0x78, 0x5E }, { 0x78, 0x01 } };
     static const char zip[] = { 0x50, 0x4B, 0x03, 0x04 };
     static const char rar4[] = { 0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00 };
     static const char rar5[] = { 0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x01, 0x00 };
 
     if (data.compare(0, sizeof(gzip), gzip, sizeof(gzip)) == 0) {
-        result.insert(std::pair<std::string, std::string>(fileName, string_gzinflate(data)));
+        result.insert(std::pair<std::string, std::string>(fileName, StringGzipInflate(data)));
     } else if ((data.compare(0, sizeof(zlib[0]), zlib[0], sizeof(zlib[0])) == 0) || (data.compare(0, sizeof(zlib[1]), zlib[1], sizeof(zlib[1])) == 0) ||
                (data.compare(0, sizeof(zlib[2]), zlib[2], sizeof(zlib[2])) == 0) || (data.compare(0, sizeof(zlib[3]), zlib[3], sizeof(zlib[3])) == 0)) {
-        result.insert(std::pair<std::string, std::string>(fileName, string_gzuncompress(data)));
+        result.insert(std::pair<std::string, std::string>(fileName, StringGzipUncompress(data)));
     } else if (data.compare(0, sizeof(zip), zip, sizeof(zip)) == 0) {
         TCHAR path[MAX_PATH], file[MAX_PATH];
         GetTempPath(MAX_PATH, path);
-        UINT unique = GetTempFileName(path, _T("mpc"), 0, file);
+        GetTempFileName(path, _T("mpc"), 0, file);
 
         CFile f;
         if (f.Open(file, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary | CFile::shareDenyNone)) {
@@ -572,19 +560,19 @@ string_map string_uncompress(const std::string& data, const std::string& fileNam
             f.Close();
         }
 
-        file_unzip(CStringA(file), fileName.c_str(), result);
+        FileUnzip(CStringA(file), fileName.c_str(), result);
         DeleteFile(file);
     } else if ((data.compare(0, sizeof(rar4), rar4, sizeof(rar4)) == 0) || (data.compare(0, sizeof(rar5), rar5, sizeof(rar5)) == 0)) {
         TCHAR path[MAX_PATH], file[MAX_PATH];
         GetTempPath(MAX_PATH, path);
-        UINT unique = GetTempFileName(path, _T("mpc"), 0, file);
+        GetTempFileName(path, _T("mpc"), 0, file);
 
         CFile f;
         if (f.Open(file, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary | CFile::shareDenyNone)) {
             f.Write((BYTE*)data.c_str(), (UINT)data.length());
             f.Close();
         }
-        file_unrar(file, result);
+        FileUnRar(file, result);
         DeleteFile(file);
     } else {
         result.insert(std::pair<std::string, std::string>(fileName, data));
@@ -592,7 +580,7 @@ string_map string_uncompress(const std::string& data, const std::string& fileNam
     return result;
 }
 
-std::string string_generate_unique_key()
+std::string SubtitlesProvidersUtils::StringGenerateUniqueKey()
 {
     TCHAR strFileName[MAX_PATH];
     GetModuleFileName(nullptr, strFileName, MAX_PATH);
@@ -605,7 +593,8 @@ std::string string_generate_unique_key()
     return std::string((PCHAR)&buffer[0], buffer.size());
 }
 
-HRESULT string_download(const std::string& url, const string_map& headers, std::string& data, BOOL bAutoRedirect, DWORD* dwStatusCode)
+HRESULT SubtitlesProvidersUtils::StringDownload(const std::string& url, const stringMap& headers,
+                                                std::string& data, BOOL bAutoRedirect, DWORD* dwStatusCode)
 {
     data.clear();
     try {
@@ -614,12 +603,15 @@ HRESULT string_download(const std::string& url, const string_map& headers, std::
         std::string strHeaders;
         for (const auto& iter : headers) {
             if (!iter.second.empty()) {
-                strHeaders += string_format("%s: %s\r\n", iter.first.c_str(), iter.second.c_str());
+                strHeaders += StringFormat("%s: %s\r\n", iter.first.c_str(), iter.second.c_str());
             }
         }
 
         is.SetOption(INTERNET_OPTION_CONNECT_TIMEOUT, 5000 /*default=60000*/);
-        CAutoPtr<CHttpFile> pHttpFile((CHttpFile*)is.OpenURL(UTF8To16(url.c_str()), 1, INTERNET_FLAG_TRANSFER_BINARY | INTERNET_FLAG_EXISTING_CONNECT | (bAutoRedirect == FALSE ? INTERNET_FLAG_NO_AUTO_REDIRECT : NULL), UTF8To16(strHeaders.c_str()), -1));
+        CAutoPtr<CHttpFile> pHttpFile((CHttpFile*)is.OpenURL(UTF8To16(url.c_str()),
+                                                             1,
+                                                             INTERNET_FLAG_TRANSFER_BINARY | INTERNET_FLAG_EXISTING_CONNECT | (bAutoRedirect == FALSE ? INTERNET_FLAG_NO_AUTO_REDIRECT : NULL),
+                                                             UTF8To16(strHeaders.c_str())));
 
         DWORD total_length = 0, length = 0, index = 0;
         while (pHttpFile->QueryInfo(HTTP_QUERY_CONTENT_LENGTH, length, &index)) {
@@ -650,7 +642,9 @@ HRESULT string_download(const std::string& url, const string_map& headers, std::
     return S_OK;
 }
 
-HRESULT string_upload(const std::string& url, const string_map& headers, const std::string& content, std::string& data, BOOL bAutoRedirect, DWORD* dwStatusCode)
+HRESULT SubtitlesProvidersUtils::StringUpload(const std::string& url, const stringMap& headers,
+                                              const std::string& content, std::string& data,
+                                              BOOL bAutoRedirect, DWORD* dwStatusCode)
 {
     try {
         DWORD dwServiceType = NULL;
@@ -666,7 +660,7 @@ HRESULT string_upload(const std::string& url, const string_map& headers, const s
 
         for (const auto& iter : headers) {
             if (!iter.second.empty()) {
-                pHttpFile->AddRequestHeaders(UTF8To16(string_format("%s: %s", iter.first.c_str(), iter.second.c_str()).c_str()), HTTP_ADDREQ_FLAG_ADD_IF_NEW);
+                pHttpFile->AddRequestHeaders(UTF8To16(StringFormat("%s: %s", iter.first.c_str(), iter.second.c_str()).c_str()), HTTP_ADDREQ_FLAG_ADD_IF_NEW);
             }
         }
 
@@ -704,9 +698,11 @@ HRESULT string_upload(const std::string& url, const string_map& headers, const s
     return S_OK;
 }
 
-string_array string_tokenize(const std::string& text, const std::string& delimiters, bool blank)
+SubtitlesProvidersUtils::stringArray SubtitlesProvidersUtils::StringTokenize(const std::string& text,
+        const std::string& delimiters,
+        bool blank)
 {
-    string_array result;
+    stringArray result;
     std::string next;
     for (const auto& iter : text) {
         if (delimiters.find(iter) != std::string::npos) {
@@ -725,7 +721,7 @@ string_array string_tokenize(const std::string& text, const std::string& delimit
     return result;
 }
 
-std::string string_trim(const std::string& text, const std::string& characters, int side)
+std::string SubtitlesProvidersUtils::StringTrim(const std::string& text, const std::string& characters, int side)
 {
     std::string result(text);
     if (!characters.empty()) {
@@ -742,7 +738,7 @@ std::string string_trim(const std::string& text, const std::string& characters, 
     return result;
 }
 
-std::string string_replace(const std::string& text, const std::string& find, const std::string& replace)
+std::string SubtitlesProvidersUtils::StringReplace(const std::string& text, const std::string& find, const std::string& replace)
 {
     std::string result(text);
     std::string::size_type pos = 0;
@@ -754,10 +750,10 @@ std::string string_replace(const std::string& text, const std::string& find, con
     return result;
 }
 
-std::string LanguagesISO6391(const char delimiter/* = ','*/)
+std::string SubtitlesProvidersUtils::LanguagesISO6391(const char delimiter/* = ','*/)
 {
     std::string result;
-    string_array languages = string_tokenize((const char*)UTF16To8(AfxGetAppSettings().strSubtitlesLanguageOrder), ",; ");
+    stringArray languages = StringTokenize((const char*)UTF16To8(AfxGetAppSettings().strSubtitlesLanguageOrder), ",; ");
     for (const auto& iter : languages) {
         result += (iter.length() > 2) ? (const char*)CStringA(ISO6392To6391(iter.c_str())) : iter;
         if (iter != languages.back()) {
@@ -767,10 +763,10 @@ std::string LanguagesISO6391(const char delimiter/* = ','*/)
     return result;
 }
 
-std::string LanguagesISO6392(const char delimiter/* = ','*/)
+std::string SubtitlesProvidersUtils::LanguagesISO6392(const char delimiter/* = ','*/)
 {
     std::string result;
-    string_array languages = string_tokenize((const char*)UTF16To8(AfxGetAppSettings().strSubtitlesLanguageOrder), ",; ");
+    stringArray languages = StringTokenize((const char*)UTF16To8(AfxGetAppSettings().strSubtitlesLanguageOrder), ",; ");
     for (const auto& iter : languages) {
         result += (iter.length() < 3) ? (const char*)ISO6391To6392(iter.c_str()) : iter;
         if (iter != languages.back()) {
