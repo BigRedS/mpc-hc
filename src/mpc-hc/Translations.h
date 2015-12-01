@@ -1,5 +1,5 @@
 /*
-* (C) 2014 see Authors.txt
+* (C) 2014-2015 see Authors.txt
 *
 * This file is part of MPC-HC.
 *
@@ -26,11 +26,7 @@
 namespace Translations
 {
     struct LanguageResource {
-        LanguageResource()
-            : LanguageResource(WORD_ERROR, nullptr, nullptr)
-        {};
-
-        LanguageResource(LANGID localeID, LPCTSTR name, LPCTSTR dllPath)
+        _CONST_DATA LanguageResource(LANGID localeID, LPCTSTR name, LPCTSTR dllPath)
             : localeID(localeID)
             , name(name)
             , dllPath(dllPath)

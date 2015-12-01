@@ -21,7 +21,7 @@
 #pragma once
 
 template <typename... T>
-inline std::array<typename std::common_type<T...>::type, sizeof...(T)> make_array(T... values)
+_CONST_DATA std::array<typename std::common_type<T...>::type, sizeof...(T)> make_array(T&& ... values)
 {
-    return { values... };
+    return { std::forward<T>(values)... };
 }
