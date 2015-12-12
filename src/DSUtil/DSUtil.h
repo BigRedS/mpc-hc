@@ -292,6 +292,18 @@ typename std::enable_if<std::is_signed<T>::value, T>::type GCD(T a, T b)
     return T(GCD(uT(std::abs(a)), uT(std::abs(b))));
 }
 
+template <class T>
+_CONST_DATA typename std::enable_if<std::is_unsigned<T>::value, int>::type SGN(T n)
+{
+    return T(0) < n;
+}
+
+template <typename T>
+_CONST_DATA typename std::enable_if<std::is_signed<T>::value, int>::type SGN(T n)
+{
+    return (T(0) < n) - (n < T(0));
+}
+
 namespace CStringUtils
 {
     struct IgnoreCaseLess {
