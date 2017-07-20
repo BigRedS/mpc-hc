@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2016 see Authors.txt
+ * (C) 2006-2017 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -549,7 +549,7 @@ void CPlayerSeekBar::OnLButtonDown(UINT nFlags, CPoint point)
         VERIFY(SetTimer(TIMER_HOVER_CAPTURED, HOVER_CAPTURED_TIMEOUT, nullptr));
     } else {
         if (!m_pMainFrame->m_fFullScreen) {
-            MapWindowPoints(m_pMainFrame, &point, 1);
+            ClientToScreen(&point);
             m_pMainFrame->PostMessage(WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(point.x, point.y));
         }
     }

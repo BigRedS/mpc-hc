@@ -16213,6 +16213,19 @@ LRESULT CMainFrame::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
         return 0;
     }
 
+#define SAFE_ZONE 5
+    if (message == WM_NCLBUTTONDOWN) {
+        CRect r;
+        CPoint pt;
+        m_wndSeekBar.GetWindowRect(r);
+        POINTSTOPOINT(pt, lParam);
+        r.InflateRect(SAFE_ZONE, SAFE_ZONE);
+
+        if (r.PtInRect(pt)) {
+            return 0;
+        }
+    }
+
     LRESULT ret = 0;
     bool bCallOurProc = true;
     if (m_pMVRSR) {

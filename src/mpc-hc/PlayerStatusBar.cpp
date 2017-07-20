@@ -1,6 +1,6 @@
 /*
  * (C) 2003-2006 Gabest
- * (C) 2006-2015 see Authors.txt
+ * (C) 2006-2015, 2017 see Authors.txt
  *
  * This file is part of MPC-HC.
  *
@@ -439,7 +439,7 @@ void CPlayerStatusBar::OnLButtonDown(UINT nFlags, CPoint point)
         GetClientRect(r);
         CPoint p = point;
 
-        MapWindowPoints(pFrame, &point, 1);
+        ClientToScreen(&point);
 
         pFrame->PostMessage(WM_NCLBUTTONDOWN,
                             (p.x >= r.Width() - r.Height() && !pFrame->IsCaptionHidden()) ? HTBOTTOMRIGHT :
